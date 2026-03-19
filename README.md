@@ -270,6 +270,34 @@ dynamic_multiplier (0.8–1.5)  # applied to base tier premium
 - Model is retrained monthly with new trigger event data.
 - Served via a Spring Boot REST endpoint with model serialized as `.model` file (XGBoost4J).
 
+ Python  - Primary programming language
+pandas - Data manipulation & analysis
+numpy - Mathematical computations
+Jupyter Notebook - Experimentation & prototyping
+
+Machine Learning
+
+scikit-learn - Main ML library
+model_selection - train_test_split, cross_val_score
+ensemble - RandomForestClassifier, RandomForestRegressor, GradientBoosting
+linear_model - LogisticRegression, LinearRegression, Ridge
+preprocessing - StandardScaler
+metrics - accuracy_score, classification_report, roc_auc_score, mean_absolute_error, r2_score
+
+Model Persistence
+
+joblib - Saving and loading trained models
+
+Visualization
+
+matplotlib - Plotting and graphs
+seaborn - Statistical visualizations, heatmaps
+
+Dataset :
+Size: 10,000 samples
+Generation Method: Python script with numpy.random
+Class Balance: ~30% eligible cases (realistic ratio)
+
 ---
 
 ### 2. Fraud Detection Engine — Anomaly Detection
