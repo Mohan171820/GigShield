@@ -1,23 +1,0 @@
-  % Total    % Received % Xferd  Average Speed  Time    Time    Time   Current
-                                 Dload  Upload  Total   Spent   Left   Speed
-  0      0   0      0   0      0      0      0                              0*   Trying 26.37.211.123:8080...
-* Established connection to 26.37.211.123 (26.37.211.123 port 8080) from 26.155.214.95 port 59929 
-* using HTTP/1.x
-> GET /api/v1/weather/monitor/BANGALORE HTTP/1.1
-> Host: 26.37.211.123:8080
-> User-Agent: curl/8.18.0
-> Accept: */*
-> 
-* Request completely sent off
-< HTTP/1.1 200 
-< Vary: Origin
-< Vary: Access-Control-Request-Method
-< Vary: Access-Control-Request-Headers
-< Content-Type: application/json
-< Transfer-Encoding: chunked
-< Date: Fri, 03 Apr 2026 07:59:41 GMT
-< 
-{ [119 bytes data]
-100    108   0    108   0      0    120      0                              0100    108   0    108   0      0    120      0                              0100    108   0    108   0      0    120      0                              0
-* Connection #0 to host 26.37.211.123:8080 left intact
-{"aqi":90,"city":"BANGALORE","temperature":32.0,"rainfall":0.0,"cycloneAlert":false,"status":"FETCHED_LIVE"}
