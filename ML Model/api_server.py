@@ -12,6 +12,10 @@ warnings.filterwarnings('ignore')
 # ============================================
 # LOAD YOUR OLD MODEL FILES
 # ============================================
+base_dir = os.path.dirname(os.path.abspath(__file__))
+os.chdir(base_dir)
+print(f"Working directory set to: {base_dir}", file=sys.stderr)
+
 
 print("="*60)
 print("🚀 Starting Insurance Prediction API Server (OLD MODEL)")
@@ -216,5 +220,6 @@ if __name__ == '__main__':
     print("\n" + "="*60)
     print("🚀 Server starting... Press CTRL+C to stop\n")
     
-    # Run on all network interfaces
-    app.run(host='0.0.0.0', port=5000, debug=True)
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port)
