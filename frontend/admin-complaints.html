@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InSureGig — Admin Complaints</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { background: #f4f5f7; }
+    .navbar-admin-tag { background: var(--accent-bg); color: var(--accent); border-radius: 999px; padding: 3px 10px; font-size: .72rem; font-weight: 700; text-transform: uppercase; margin-left: 10px; }
+  </style>
+</head>
+<body>
+
+<script>
+  if (sessionStorage.getItem('gsRole') !== 'admin') {
+    location.replace('login.html');
+  }
+</script>
+
+<nav class="navbar">
+  <div class="flex-center gap-8">
+    <a href="dashboard.html" class="navbar-brand">InSureGig</a>
+    <span class="navbar-admin-tag">Admin</span>
+  </div>
+  <ul class="navbar-links">
+    <li><a href="dashboard.html">Analytics</a></li>
+    <li><a href="admin-workers.html">Workers</a></li>
+    <li><a href="admin-transactions.html">Transactions</a></li>
+    <li><a href="admin-complaints.html" class="active">Complaints</a></li>
+    <li>
+      <a href="login.html" onclick="sessionStorage.clear()" style="color:var(--danger)">Logout</a>
+    </li>
+  </ul>
+</nav>
+
+<div class="page-wrapper">
+  <div class="container" style="max-width:1200px">
+    
+    <div class="flex-between mb-24 flex-wrap gap-16">
+      <div>
+        <h1 style="font-size:1.8rem;margin-bottom:4px">Worker Complaints</h1>
+        <p class="text-muted text-sm">Review manual disruption claims from delivery workers.</p>
+      </div>
+      <button class="btn btn-sm btn-secondary" onclick="loadComplaints()">↻ Refresh List</button>
+    </div>
+
+    <div class="card-lg" style="padding:0;overflow:hidden">
+      <div class="table-wrapper" style="border:none;border-radius:0">
+        <table>
+          <thead>
+            <tr>
+              <th>Date / Time</th>
+              <th>Worker ID</th>
+              <th>Category</th>
+              <th>Place / Location</th>
+              <th style="padding-right:24px">Status</th>
+            </tr>
+          </thead>
+          <tbody id="complaintsTbody">
+            <tr><td colspan="6" class="text-center text-muted" style="padding:40px">Loading complaints...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  const workerCache = {};
+
+  function updateBadges(id, text) {
+    document.querySelectorAll(`.worker-loc[data-worker-id="${id}"]`).forEach(b => {
+      b.textContent = text;
+    });
+  }
+
+  async function loadComplaints() {
+    const tbody = document.getElementById('complaintsTbody');
+    const endpoints = ['/api/v1/complaints/all', '/api/v1/complaints', '/api/v1/admin/complaints'];
+    
+    let lastError = null;
+    let data = null;
+
+    for (const url of endpoints) {
+      try {
+        data = await apiGet(url);
+        if (data) break; // Success!
+      } catch (err) {
+        lastError = err;
+        console.warn(`Failed endpoint ${url}:`, err.message);
+      }
+    }
+
+    if (!data) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted" style="padding:40px">
+        <p>Could not load complaints list.</p>
+        <p class="text-xs">Tried: ${endpoints.join(', ')}</p>
+        <p class="text-xs mt-8" style="color:var(--danger)">Error: ${lastError?.message || 'Unknown'}</p>
+      </td></tr>`;
+      return;
+    }
+
+      // Sort newest first
+      const sorted = [...data].sort((a,b) => 
+        new Date(b.createdAt || b.created_at || 0) - new Date(a.createdAt || a.created_at || 0)
+      );
+      tbody.innerHTML = sorted.map(c => {
+        const ts = c.createdAt || c.created_at || c.submittedAt || c.submitted_at;
+        const rawStatus = c.status || c.complaintStatus || c.complaint_status || c.status_label || 'PENDING';
+        const status = rawStatus.toUpperCase();
+        
+        return `
+          <tr data-complaint-id="${c.id}">
+            <td>
+              <div class="fw-600">${fmtDate(ts)}</div>
+              <div class="text-muted text-xs">${fmtTime(ts)}</div>
+            </td>
+            <td><a href="admin-workers.html?search=${c.workerId}" class="text-accent fw-600">#${c.workerId}</a></td>
+            <td>${(c.category || '').replace(/_/g, ' ')}</td>
+            <td class="text-sm">
+              <span class="fw-600 worker-loc" data-worker-id="${c.workerId}" style="color:var(--accent)">...</span>
+              <div style="margin-top:4px">${c.description || '—'}</div>
+            </td>
+            <td style="padding-right:24px">${statusBadge(status)}</td>
+          </tr>
+        `;
+      }).join('');
+      return sorted;
+  }
+
+  async function updateStatus(id, status, silent = false) {
+    if (!silent && !confirm(`Are you sure you want to mark this complaint as ${status}?`)) return;
+    
+    // Fallback: try common update patterns
+    const endpoints = [
+      `/api/v1/admin/complaints/${id}/status?status=${status}`, 
+      `/api/v1/complaints/${id}/status?status=${status}`,
+      `/api/v1/admin/complaints/${id}/update?status=${status}`
+    ];
+
+    let success = false;
+    let lastError = null;
+
+    for (const url of endpoints) {
+      try {
+        await apiPost(url, {});
+        success = true;
+        break;
+      } catch (err) {
+        lastError = err;
+      }
+    }
+
+    if (!success) {
+       if (!silent) alert('Failed to update status: ' + lastError.message);
+       else console.error(`🤖 Update Status Fail for #${id}:`, lastError.message);
+    } else {
+       if (!silent) loadComplaints();
+    }
+  }
+
+  /**
+   * ML Auto-Pilot: Automatically identifies any PENDING complaint
+   * and settles it via the trained ML model.
+   */
+  async function runAutoPilot(data) {
+    if (!data || !data.length) return;
+    const pending = data.filter(c => (c.status || 'PENDING').toUpperCase() === 'PENDING');
+    if (pending.length === 0) return;
+
+    console.log(`🤖 ML Auto-Pilot: Processing ${pending.length} pending items...`);
+    
+    for (const c of pending) {
+      try {
+        // 1. Mark as "ML Processing" in UI
+        const row = document.querySelector(`tr[data-complaint-id="${c.id}"]`);
+        if (row) {
+           const badgeCell = row.querySelector('td:nth-last-child(1)');
+           if (badgeCell) badgeCell.innerHTML = statusBadge('ML_PROCESSING');
+        }
+
+        // 2. Call your trained ML model's decision-making endpoint
+        console.log(`🤖 ML Auto-Pilot: Requesting decision for #${c.id}...`);
+        const mlResult = await apiGet(`/api/v1/ml/verify-complaint/${c.id}`);
+        const decision = (mlResult.decision || mlResult.prediction || mlResult.result || 'REJECTED').toUpperCase();
+
+        // 3. Automatically update status in database
+        console.log(`🤖 ML Auto-Pilot: Decision for #${c.id} -> ${decision}`);
+        await updateStatus(c.id, decision, true);
+
+      } catch (err) {
+        console.error(`🤖 ML Auto-Pilot Error for #${c.id}:`, err.message);
+      }
+    }
+
+    // Refresh after all auto-pilot actions are done
+    loadComplaints();
+  }
+
+  async function fetchWorkerLocations() {
+    const badges = document.querySelectorAll('.worker-loc');
+    const ids = new Set();
+    badges.forEach(b => ids.add(b.getAttribute('data-worker-id')));
+
+    for (const id of ids) {
+      if (!id || id === '—') continue;
+      if (workerCache[id]) {
+        updateBadges(id, workerCache[id]);
+        continue;
+      }
+
+      try {
+        const w = await apiGet(`/api/v1/workers/${id}`);
+        const loc = `${w.city || 'Unknown City'} — ${w.zone || 'Unknown Zone'}`;
+        workerCache[id] = loc;
+        updateBadges(id, loc);
+      } catch (err) {
+        console.warn(`Could not fetch loc for worker #${id}:`, err.message);
+        updateBadges(id, 'Location Unknown');
+      }
+    }
+  }
+
+  function updateBadges(id, text) {
+    document.querySelectorAll(`.worker-loc[data-worker-id="${id}"]`).forEach(b => {
+      b.textContent = text;
+    });
+  }
+
+  async function init() {
+    const data = await loadComplaints();
+    if (data && data.length) {
+      fetchWorkerLocations();
+      runAutoPilot(data);
+    }
+  }
+
+  init();
+</script>
+
+</body>
+</html>

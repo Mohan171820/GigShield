@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InSureGig — Login</title>
+  <meta name="description" content="Sign in to InSureGig — parametric income insurance for delivery workers." />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { background: var(--card-bg); }
+
+    .login-wrapper {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+    }
+
+    .login-brand {
+      font-family: var(--font-head);
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 6px;
+      text-align: center;
+    }
+
+    .login-tagline {
+      color: var(--muted);
+      font-size: .9rem;
+      margin-bottom: 48px;
+      text-align: center;
+    }
+
+    .role-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      width: 100%;
+      max-width: 640px;
+      margin-bottom: 32px;
+    }
+
+    .role-card {
+      background: #fff;
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 36px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, box-shadow .2s, transform .15s;
+    }
+    .role-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 4px 24px rgba(79,70,229,.1);
+      transform: translateY(-2px);
+    }
+    .role-card.selected {
+      border-color: var(--accent);
+      background: var(--accent-bg);
+    }
+    .role-icon { font-size: 3rem; margin-bottom: 14px; }
+    .role-title {
+      font-family: var(--font-head);
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .role-desc { font-size: .82rem; color: var(--muted); }
+
+    /* Worker panel */
+    .worker-panel, .admin-panel {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 440px;
+      animation: fadeIn .25s ease both;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-title {
+      font-family: var(--font-head);
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .tab-row {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      margin: 20px 0 24px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 9px;
+      font-size: .85rem;
+      font-weight: 500;
+      border: none;
+      background: #fff;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+      font-family: var(--font-body);
+    }
+    .tab-btn.active {
+      background: var(--accent);
+      color: #fff;
+    }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    .divider-text {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: .78rem;
+      margin: 18px 0;
+    }
+    .divider-text::before, .divider-text::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    .secure-note {
+      margin-top: 16px;
+      text-align: center;
+      font-size: .75rem;
+      color: var(--muted);
+    }
+
+    @media (max-width: 520px) {
+      .role-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+      .role-card { padding: 24px 14px; }
+      .role-icon { font-size: 2.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-wrapper page-wrapper">
+
+  <div class="login-brand">InSureGig</div>
+  <p class="login-tagline">Parametric income insurance for delivery workers</p>
+
+  <!-- ── Role Selector ── -->
+  <div class="role-grid" id="roleGrid">
+    <div class="role-card" id="roleWorker" onclick="selectRole('worker')">
+      <div class="role-icon">🛵</div>
+      <div class="role-title">Delivery Worker</div>
+      <div class="role-desc">Sign up or log in to view your policy, payouts & weather alerts</div>
+    </div>
+    <div class="role-card" id="roleAdmin" onclick="selectRole('admin')">
+      <div class="role-icon">🏢</div>
+      <div class="role-title">Insurance Admin</div>
+      <div class="role-desc">Insurer / operations team — view analytics, manage policies & payouts</div>
+    </div>
+  </div>
+
+  <!-- ── Worker Panel ── -->
+  <div class="worker-panel" id="workerPanel" style="display:none">
+    <p class="panel-title">Welcome, Worker 👋</p>
+    <p class="text-muted text-sm mb-8">Enter your Worker ID to access your dashboard, or register if you're new.</p>
+
+    <div class="tab-row">
+      <button class="tab-btn active" id="tabReturn" onclick="switchTab('return')">Returning Worker</button>
+      <button class="tab-btn" id="tabNew" onclick="switchTab('new')">New Registration</button>
+    </div>
+
+    <!-- Returning worker -->
+    <div class="tab-pane active" id="paneReturn">
+      <div class="form-group">
+        <label for="workerId">Your Worker ID</label>
+        <input type="tel" id="workerId" placeholder="Enter your Worker ID" />
+      </div>
+      <div class="form-group">
+        <label for="workerPassword">Password</label>
+        <input type="password" id="workerPassword" placeholder="••••••••" />
+      </div>
+      <div id="workerLoginError" class="alert alert-danger mb-16" style="display:none"></div>
+      <button class="btn btn-primary btn-full btn-lg" onclick="workerLogin()">
+        <span id="loginLabel">Go to My Dashboard →</span>
+        <span id="loginSpinner" style="display:none">Verifying…</span>
+      </button>
+    </div>
+
+    <!-- New worker -->
+    <div class="tab-pane" id="paneNew">
+      <div class="alert alert-info mb-16">
+        ℹ️ You'll complete a quick 2-minute registration. No documents needed.
+      </div>
+      <a href="index.html" class="btn btn-primary btn-full btn-lg">Start Registration →</a>
+    </div>
+
+    <p class="secure-note">🔒 Your data is encrypted and never shared with third parties.</p>
+
+    <button onclick="backToRoles()" class="btn btn-secondary btn-sm mt-16" style="width:100%;justify-content:center">← Change role</button>
+  </div>
+
+  <!-- ── Admin Panel ── -->
+  <div class="admin-panel" id="adminPanel" style="display:none">
+    <p class="panel-title">Insurer / Admin Login 🏢</p>
+    <p class="text-muted text-sm mb-24">Access the analytics dashboard and policy controls.</p>
+
+    <div class="form-group">
+      <label for="adminEmail">Email</label>
+      <input type="email" id="adminEmail" placeholder="admin@insuregig.in" />
+    </div>
+    <div class="form-group">
+      <label for="adminPass">Password</label>
+      <input type="password" id="adminPass" placeholder="••••••••" />
+    </div>
+    <p class="text-xs text-muted mb-16">Demo credentials: admin@insuregig.in / admin123</p>
+
+    <div id="adminLoginError" class="alert alert-danger mb-16" style="display:none"></div>
+    <button class="btn btn-primary btn-full btn-lg" onclick="adminLogin()">Sign In →</button>
+
+    <p class="secure-note">🔒 Admin access is logged and monitored.</p>
+
+    <button onclick="backToRoles()" class="btn btn-secondary btn-sm mt-16" style="width:100%;justify-content:center">← Change role</button>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+<script>
+  // Clear previous session on login page load
+  sessionStorage.removeItem('gsRole');
+  sessionStorage.removeItem('gsWorkerId');
+
+  function selectRole(role) {
+    document.getElementById('roleWorker').classList.toggle('selected', role === 'worker');
+    document.getElementById('roleAdmin').classList.toggle('selected', role === 'admin');
+
+    document.getElementById('workerPanel').style.display = role === 'worker' ? '' : 'none';
+    document.getElementById('adminPanel').style.display  = role === 'admin'  ? '' : 'none';
+
+    // Scroll down smoothly on mobile
+    setTimeout(() => {
+      document.getElementById(role === 'worker' ? 'workerPanel' : 'adminPanel')
+        .scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 50);
+  }
+
+  function backToRoles() {
+    document.getElementById('workerPanel').style.display = 'none';
+    document.getElementById('adminPanel').style.display  = 'none';
+    document.getElementById('roleWorker').classList.remove('selected');
+    document.getElementById('roleAdmin').classList.remove('selected');
+  }
+
+  function switchTab(tab) {
+    document.getElementById('tabReturn').classList.toggle('active', tab === 'return');
+    document.getElementById('tabNew').classList.toggle('active', tab === 'new');
+    document.getElementById('paneReturn').classList.toggle('active', tab === 'return');
+    document.getElementById('paneNew').classList.toggle('active', tab === 'new');
+  }
+
+  // ── Worker login ─────────────────────────────────────────
+  async function workerLogin() {
+    const id = parseInt(document.getElementById('workerId').value.trim());
+    const password = document.getElementById('workerPassword').value;
+    const errEl = document.getElementById('workerLoginError');
+    errEl.style.display = 'none';
+
+    if (!id || id < 1) {
+      errEl.textContent = 'Please enter a valid Worker ID.';
+      errEl.style.display = 'flex';
+      return;
+    }
+    if (!password) {
+      errEl.textContent = 'Please enter your password.';
+      errEl.style.display = 'flex';
+      return;
+    }
+
+    document.getElementById('loginLabel').style.display   = 'none';
+    document.getElementById('loginSpinner').style.display = '';
+
+    try {
+      // Reverted to use ID for login
+      const res = await apiPost('/api/v1/workers/login', { id: id, workerId: id, password: password });
+      
+      sessionStorage.setItem('gsRole', 'worker');
+      sessionStorage.setItem('gsWorkerId', id);
+      
+      location.href = `worker-dashboard.html?workerId=${id}`;
+    } catch (err) {
+      if (err.status === 401 || err.status === 404 || err.status === 400) {
+        errEl.textContent = 'Invalid Worker ID or Password.';
+      } else {
+        errEl.textContent = 'Could not connect to server. Please try again.';
+      }
+      errEl.style.display = 'flex';
+    } finally {
+      document.getElementById('loginLabel').style.display   = '';
+      document.getElementById('loginSpinner').style.display = 'none';
+    }
+  }
+
+  // ── Admin login ──────────────────────────────────────────
+  function adminLogin() {
+    const email = document.getElementById('adminEmail').value.trim();
+    const pass  = document.getElementById('adminPass').value;
+    const errEl = document.getElementById('adminLoginError');
+    errEl.style.display = 'none';
+
+    if (email === 'admin@insuregig.in' && pass === 'admin123') {
+      sessionStorage.setItem('gsRole', 'admin');
+      location.href = 'dashboard.html';
+    } else {
+      errEl.textContent = 'Invalid credentials. Try admin@insuregig.in / admin123';
+      errEl.style.display = 'flex';
+    }
+  }
+
+  // Allow Enter key on password fields
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('adminPass')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') adminLogin();
+    });
+    document.getElementById('workerPassword')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') workerLogin();
+    });
+  });
+</script>
+</body>
+</html>
