@@ -154,8 +154,7 @@ P(trigger) > 60%  →  Pre-alert ops team + pre-compute payout exposure
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│ FRONTEND    React 18 + Vite (PWA) · Tailwind CSS · Zustand   │
-│             Recharts · Leaflet.js · Firebase FCM              │
+│ FRONTEND    HTML5,CSS3,JS             │
 ├──────────────────────────────────────────────────────────────┤
 │ BACKEND     Spring Boot 3.x · Java 17 · Spring Security/JWT  │
 │             Spring @Scheduled · RabbitMQ · Redis              │
@@ -178,7 +177,7 @@ P(trigger) > 60%  →  Pre-alert ops team + pre-compute payout exposure
 
 ```
  InSureGig/
-├── frontend/              # React PWA — worker app + operator dashboard
+├── frontend/              
 ├── backend/               # Spring Boot — APIs, trigger daemon, payout engine
 │   └── ml/                # XGBoost4J inference (embedded)
 ├── ml/                    # Python — model training & fraud detection
