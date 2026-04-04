@@ -8,7 +8,7 @@
 AI-powered parametric income insurance for India's **Q-Commerce delivery partners** —  
 auto-triggered payouts when weather, pollution, or shutdowns halt their hustle.
 
-[![React](https://img.shields.io/badge/React_18-PWA-61DAFB?style=flat-square&logo=react)](https://reactjs.org)
+[!HTML,CSS,JS]
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot_3.x-Java_17-6DB33F?style=flat-square&logo=springboot)](https://spring.io)
 [![XGBoost](https://img.shields.io/badge/XGBoost-Risk_Model-0073B7?style=flat-square)](https://xgboost.ai)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-TimescaleDB-336791?style=flat-square&logo=postgresql)](https://postgresql.org)
