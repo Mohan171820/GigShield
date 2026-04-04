@@ -5,10 +5,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import java.util.List;
 
-/**
- * Robust DTO for the 3-step registration flow.
- * Supports both snake_case (frontend) and camelCase (backend) mappings.
- */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RegistrationRequestDTO {

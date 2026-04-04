@@ -19,13 +19,11 @@ public class WeatherController {
     private final WeatherService weatherService;
     private final AQIService aqiService;
 
-    /**
-     * Gets the live weather and AQI for a city to power the Weather Alerts dashboard.
-     */
+   
     @GetMapping("/monitor/{city}")
     public ResponseEntity<?> getMonitorData(@PathVariable String city) {
         WeatherService.WeatherData weather = weatherService.getCurrentWeather(city);
-        AQIService.AQIData aqi = aqiService.getCurrentAQI(city, city); // Use city as state for simplicity
+        AQIService.AQIData aqi = aqiService.getCurrentAQI(city, city); 
 
         return ResponseEntity.ok(Map.of(
             "city", city,

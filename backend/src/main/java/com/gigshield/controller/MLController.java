@@ -12,9 +12,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-/**
- * Controller to provide data for ML model inference and automated claims adjustments.
- */
 @RestController
 @RequestMapping("/api/v1/ml")
 @RequiredArgsConstructor
@@ -23,11 +20,6 @@ public class MLController {
     private final MLDataService mlDataService;
     private final XGBoostInferenceService inferenceService;
     private final ComplaintRepository complaintRepository;
-
-    /**
-     * ML AUTO-PILOT: Direct endpoint requested by the frontend to verify a complaint.
-     * Path: GET /api/v1/ml/verify-complaint/{id}
-     */
     @GetMapping("/verify-complaint/{id}")
     public ResponseEntity<Map<String, String>> verifyComplaint(@PathVariable String id) {
         try {
@@ -38,8 +30,6 @@ public class MLController {
             Worker worker = complaint.getWorker();
             FeatureRequestDTO envData = mlDataService.aggregateFeaturesForWorker(worker.getId());
             
-            // 🤖 GIGSHIELD CLAIMS VERIFIER LOGIC
-            // Behavioral Data: tenure (worker.getTenureWeeks()), offline_pattern_score (simulated)
             double offlinePatternScore = (worker.getName().toLowerCase().contains("test")) ? 0.9 : 0.15;
             
             String decision = "REJECTED";
@@ -80,20 +70,12 @@ public class MLController {
         if (clean.isEmpty()) throw new IllegalArgumentException("Numeric portion of ID not found in: " + idStr);
         return Long.parseLong(clean);
     }
-
-    /**
-     * Aggregates and returns the 15 features for a worker
-     * that are required for risk scoring by the pre-trained XGBoost model.
-     */
     @GetMapping("/features/{workerId}")
     public FeatureRequestDTO getFeaturesForWorker(@PathVariable Long workerId) {
         return mlDataService.aggregateFeaturesForWorker(workerId);
     }
 
-    /**
-     * Performs a real-time risk prediction for a worker
-     * using the 15 aggregated features against the pre-trained XGBoost model.
-     */
+
     @GetMapping("/predict/{workerId}")
     public java.util.Map<String, Object> predictRiskForWorker(@PathVariable Long workerId) {
         try {
@@ -114,10 +96,6 @@ public class MLController {
         }
     }
 
-    /**
-     * Returns the features as a flat double array, often preferred by
-     * ML inference engines like XGBoost4J.
-     */
     @GetMapping("/features/{workerId}/raw")
     public double[] getRawFeaturesForWorker(@PathVariable Long workerId) {
         return mlDataService.aggregateFeaturesForWorker(workerId).toFeatureArray();

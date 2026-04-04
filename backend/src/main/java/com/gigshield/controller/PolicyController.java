@@ -28,20 +28,12 @@ public class PolicyController {
     private final com.gigshield.repository.ClaimRepository claimRepository;
     private final MLDataService mlDataService;
     private final XGBoostInferenceService inferenceService;
-
-    /**
-     * Smart Registration: Creates both the Worker and their first Policy in one go.
-     * This matches the 3-step 'Register Me' flow in the UI.
-     */
     @PostMapping(value = {"/register-full", ""}) 
     public ResponseEntity<?> registerFull(@RequestBody RegistrationRequestDTO request) {
         try {
             log.info("Full live registration request: [Name: {}, Platform: {}, Zone: {}]", 
                 request.getName(), request.getPlatform(), request.getZone());
             log.debug("DEBUG - Full Request DTO: {}", request);
-
-            // 0. ACTUARIAL SAFETY CHECK (The Kill Switch)
-            // If Loss Ratio > 85%, suspend new enrolments to protect the fund
             BigDecimal totalPaid = claimRepository.sumTotalPayouts();
             BigDecimal totalPremiums = policyRepository.sumTotalPremiums();
             if (totalPaid != null && totalPremiums != null && totalPremiums.compareTo(BigDecimal.ZERO) > 0) {
@@ -53,8 +45,6 @@ public class PolicyController {
                     ));
                 }
             }
-
-            // 1. Create/Update Worker with LIVE data from Frontend
             Worker worker = null;
             if (request.getWorkerId() != null) {
                 worker = workerRepository.findById(request.getWorkerId()).orElse(null);
@@ -63,7 +53,6 @@ public class PolicyController {
                 worker = workerRepository.findByPhoneNumber(request.getPhoneNumber()).orElse(null);
             }
             if (worker == null) {
-                // Must be a new worker, enforce name/phone
                 if (request.getName() == null || request.getPhoneNumber() == null) {
                     return ResponseEntity.badRequest().body(java.util.Map.of("error", "Name and Phone Number are required for new workers."));
                 }
@@ -118,13 +107,13 @@ public class PolicyController {
             // 3. SUSTAINABLE PRICING LOGIC
             // Formula: (Trigger Prob) * (Avg Income Lost/Day) * (7 Days)
             // ML score is usually 0.8 - 2.5 representing risk. Let's map it to a probability 0.01 - 0.10
-            double prob = (riskMultiplier / 20.0); // Simple mapping for demo
+            double prob = (riskMultiplier / 20.0); 
             double avgIncomeLostPerDay = 600.0;
             double baseCalc = prob * avgIncomeLostPerDay * 7;
             
             // Clamp within the target range: ₹20 - ₹50
-            if (baseCalc < 20) baseCalc = 21.50; // Minimal sustainable
-            if (baseCalc > 50) baseCalc = 49.99; // Cap for affordability
+            if (baseCalc < 20) baseCalc = 21.50; 
+            if (baseCalc > 50) baseCalc = 49.99; 
             
             BigDecimal dynamicPremium = BigDecimal.valueOf(baseCalc).setScale(2, java.math.RoundingMode.HALF_UP);
             

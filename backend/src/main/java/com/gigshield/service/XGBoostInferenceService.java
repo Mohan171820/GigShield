@@ -8,10 +8,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-/**
- * Service responsible for performing real-time inference
- * by calling a remote FastAPI model on another laptop.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor

@@ -14,15 +14,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Nightly scheduler that pulls live weather and AQI data for all
- * supported cities/zones and persists them as ZoneMetrics rows.
- *
- * These records feed into the XGBoost feature aggregation:
- *   - zone_disruption_freq_90d
- *   - zone_avg_rainfall_mm
- *   - zone_avg_winter_aqi
- */
 @Slf4j
 @Service
 @EnableScheduling
@@ -32,21 +23,13 @@ public class ZoneMetricsScheduler {
     private final ZoneMetricsRepository zoneMetricsRepository;
     private final WeatherService weatherService;
     private final AQIService aqiService;
-
-    /**
-     * Supported city → (state, list of zones) mapping.
-     * Add new cities/zones here as GigShield expands.
-     */
     private static final Map<String, CityConfig> CITY_ZONE_MAP = Map.of(
         "Bangalore", new CityConfig("Karnataka",  List.of("Koramangala", "HSR Layout", "Whitefield")),
         "Delhi",     new CityConfig("Delhi",       List.of("Dwarka", "Connaught Place", "Lajpat Nagar")),
         "Mumbai",    new CityConfig("Maharashtra", List.of("Andheri West", "Dadar", "Bandra"))
     );
 
-    /**
-     * Runs every night at 01:00 AM IST.
-     * Fetches weather + AQI and stores one ZoneMetrics row per zone.
-     */
+ 
     @Scheduled(cron = "0 0 1 * * ?", zone = "Asia/Kolkata")
     public void collectNightlyZoneMetrics() {
         LocalDate today = LocalDate.now();
@@ -105,7 +88,5 @@ public class ZoneMetricsScheduler {
 
         return m;
     }
-
-    /** Simple typed record for city configuration. */
     private record CityConfig(String state, List<String> zones) {}
 }

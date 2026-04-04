@@ -34,8 +34,8 @@ public class AQIService {
 
     /**
      * Returns the current AQI data for a given city.
-     * @param city  City name (e.g., "Delhi")
-     * @param state State name (e.g., "Delhi") — required by IQAir
+     * @param city  City name ( "Delhi")
+     * @param state State name ( "Delhi") — required by IQAir
      * @return      AQIData object with current and average AQI.
      */
     public AQIData getCurrentAQI(String city, String state) {

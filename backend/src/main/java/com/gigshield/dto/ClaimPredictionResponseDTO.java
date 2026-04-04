@@ -5,10 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Data Transfer Object for parsing the remote ML model's 
- * claim eligibility response.
- */
+
 @Data
 @Builder
 @NoArgsConstructor

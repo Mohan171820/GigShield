@@ -9,8 +9,5 @@ import java.util.List;
 @Repository
 public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
     
-    /**
-     * Fetches all complaints for a specific worker, ordered by recency.
-     */
     List<Complaint> findByWorkerIdOrderByCreatedAtDesc(Long workerId);
 }

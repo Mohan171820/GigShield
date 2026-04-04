@@ -48,12 +48,9 @@ public class WorkerController {
         return ResponseEntity.ok(workerRepository.existsByPhoneNumber(phoneNumber));
     }
 
-    /**
-     * Secure Login: Checks phone number and password.
-     */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody java.util.Map<String, String> credentials) {
-        // Now using Worker ID instead of Phone Number as requested
+      
         String idStr = credentials.get("id");
         if (idStr == null) idStr = credentials.get("workerId");
         

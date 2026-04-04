@@ -8,10 +8,6 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/**
- * Result returned after a payout attempt.
- * Contains the Razorpay transaction ID, status, and payout details.
- */
 @Data
 @Builder
 @NoArgsConstructor

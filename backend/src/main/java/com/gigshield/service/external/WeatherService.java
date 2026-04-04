@@ -10,10 +10,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 
-/**
- * Fetches current weather data from Weatherbit.
- * Falls back to deterministic mock data when mock-mode is enabled.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor

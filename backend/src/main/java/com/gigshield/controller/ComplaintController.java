@@ -23,9 +23,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Controller to handle manual disruption reports (Complaints) from workers.
- */
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/complaints")
@@ -40,10 +37,7 @@ public class ComplaintController {
     private final XGBoostInferenceService inferenceService;
     private final PayoutService payoutService;
 
-    /**
-     * Fetches ALL complaints on the platform for the Admin Dashboard.
-     * Supports both the root path and the /all alias.
-     */
+
     @GetMapping(value = {"", "/all"})
     public ResponseEntity<List<Map<String, Object>>> getAllComplaints() {
         List<Complaint> complaints = complaintRepository.findAll();
@@ -62,10 +56,6 @@ public class ComplaintController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * ML AUTO-PILOT: Performs an on-demand ML verification for a specific complaint.
-     * Path: /api/complaints/verify-complaint/{id}
-     */
     @GetMapping("/verify-complaint/{id}")
     public ResponseEntity<?> verifyComplaintAutoPilot(@PathVariable String id) {
         log.info("[ML-AUTO-PILOT] Requesting decision for Complaint ID: {}", id);
@@ -86,10 +76,6 @@ public class ComplaintController {
         }
     }
 
-    /**
-     * Updates the status of a complaint. 
-     * Frontend uses: GET /api/v1/complaints/{id}?status=ACCEPTED
-     */
     @GetMapping("/{id}")
     public ResponseEntity<?> updateStatusViaGet(
             @PathVariable Long id, 
@@ -99,10 +85,7 @@ public class ComplaintController {
         return processStatusUpdate(id, rawStatus);
     }
 
-    /**
-     * Updates the status of a complaint (Accept/Reject).
-     * Supports PUT/POST for future-proofing.
-     */
+
     @RequestMapping(value = "/{id}/status", method = {RequestMethod.PUT, RequestMethod.POST})
     public ResponseEntity<?> updateStatus(
             @PathVariable Long id, 
@@ -129,7 +112,7 @@ public class ComplaintController {
                     .map(c -> {
                         c.setStatus(finalStatus);
                         complaintRepository.save(c);
-                        log.info("[ADMIN-STATUS] ✅ SUCCESS: Complaint ID={} set to {}", id, finalStatus);
+                        log.info("[ADMIN-STATUS]  SUCCESS: Complaint ID={} set to {}", id, finalStatus);
                         return ResponseEntity.ok(Map.of("message", "Status updated successfully to " + finalStatus));
                     })
                     .orElse(ResponseEntity.notFound().build());
@@ -140,10 +123,7 @@ public class ComplaintController {
         }
     }
 
-    /**
-     * Submits a manual complaint/report.
-     * Includes robust parsing for workerId strings like '4:1'.
-     */
+  
     @PostMapping
     public ResponseEntity<?> submitComplaint(@RequestBody Map<String, Object> payload) {
         try {

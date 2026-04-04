@@ -16,9 +16,6 @@ public class MLDataService {
     private final WeatherService weatherService;
     private final AQIService aqiService;
 
-    /**
-     * Aggregates the 7 weather features required for the remote FastAPI model.
-     */
     public FeatureRequestDTO aggregateFeaturesForWorker(Long workerId) {
         Worker worker = workerRepository.findById(workerId)
                 .orElseThrow(() -> new RuntimeException("Worker not found: " + workerId));

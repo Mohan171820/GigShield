@@ -1,8 +1,4 @@
--- GIGSHIELD SEED DATA (PURE DATA INJECTION)
--- Normalized for BCR 0.65 / Loss Ratio 0.85 Actuarial Accuracy
--- Use ON CONFLICT (id) DO NOTHING to allow resilient restarts
 
--- 1. Create Mock Workers (1-15)
 INSERT INTO workers (id, phone_number, upi_id, name, city, zone, platform, weekly_active_hours, tenure_weeks, orders_this_month, avg_daily_earnings, password, created_at)
 VALUES
 (1, '9876543210', 'mohan@upi', 'Mohan Kumar', 'Chennai', 'Velachery', 'BLINKIT', 45, 12, 142, 650.00, 'admin123', NOW() - INTERVAL '12 weeks'),
@@ -22,7 +18,7 @@ VALUES
 (15, '9876543224', 'amit@upi', 'Amit B', 'Bangalore', 'Koramangala', 'SWIGGY_INSTAMART', 37, 9, 104, 570.00, 'admin123', NOW() - INTERVAL '12 weeks')
 ON CONFLICT (id) DO NOTHING;
 
--- 2. Build 15 Active Policies (Present Week)
+
 INSERT INTO policies (id, worker_id, tier, base_premium, dynamic_multiplier, final_premium, max_weekly_payout, risk_score, week_start_date, week_end_date, status, created_at)
 VALUES
 (1, 1, 'PRO', 49.99, 1.25, 49.99, 1200.00, 125, CURRENT_DATE, CURRENT_DATE + 7, 'ACTIVE', NOW()),
@@ -42,8 +38,6 @@ VALUES
 (15, 15, 'PRO', 49.99, 1.20, 49.99, 1200.00, 120, CURRENT_DATE, CURRENT_DATE + 7, 'ACTIVE', NOW())
 ON CONFLICT (id) DO NOTHING;
 
--- 3. HISTORICAL PREMIUM VOLUME: Generate ~₹7,500 more to normalize BCR to ~0.65
--- Adding 15 workers * 10 weeks of historical Premiums (~₹7,500 total)
 INSERT INTO policies (id, worker_id, tier, base_premium, dynamic_multiplier, final_premium, max_weekly_payout, risk_score, week_start_date, week_end_date, status, created_at)
 SELECT 
     100 + i, 
@@ -57,7 +51,6 @@ SELECT
 FROM generate_series(1, 150) AS i
 ON CONFLICT (id) DO NOTHING;
 
--- 4. Insert Mock Payouts (Adjusted to total exactly ₹5,200 for Actuarial Accuracy with BCR ~0.65)
 INSERT INTO payouts (id, worker_id, policy_id, amount, status, created_at)
 VALUES
 (1,1,1,400.00,'PAID',NOW()),
@@ -77,7 +70,6 @@ VALUES
 (15,15,15,120.00,'PAID',NOW())
 ON CONFLICT (id) DO NOTHING;
 
--- 5. Insert Mock Complaints
 INSERT INTO complaints (id, worker_id, description, category, status, created_at)
 VALUES
 (1,1,'Heavy rainfall in Sector 5 made delivery impossible.','HEAVY_RAIN','PENDING',NOW()),
@@ -92,7 +84,6 @@ VALUES
 (10,10,'Extreme heat caused dehydration.','EXTREME_HEAT','PENDING',NOW())
 ON CONFLICT (id) DO NOTHING;
 
--- 6. Sync Sequences for PostgreSQL Auto-Increment after Manual Inserts
 SELECT setval('workers_id_seq', (SELECT COALESCE(MAX(id), 1) FROM workers));
 SELECT setval('policies_id_seq', (SELECT COALESCE(MAX(id), 1) FROM policies));
 SELECT setval('payouts_id_seq', (SELECT COALESCE(MAX(id), 1) FROM payouts));
