@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/GigShield-AI%20Parametric%20Insurance-FF6B2B?style=for-the-badge&logo=shield&logoColor=white"/>
+<img src="https://img.shields.io/badge/ InSureGig-AI%20Parametric%20Insurance-FF6B2B?style=for-the-badge&logo=shield&logoColor=white"/>
 
-# 🛡️ GigShield
+# 🛡️ InSureGig 
 ### *No paperwork. No waiting. Just protection.*
 
 AI-powered parametric income insurance for India's **Q-Commerce delivery partners** —  
@@ -24,7 +24,7 @@ auto-triggered payouts when weather, pollution, or shutdowns halt their hustle.
 > A 3-hour monsoon wipes that out.  
 > He has **zero** safety net. Zero.
 
-GigShield fixes this with **parametric triggers** — when rain/AQI/curfew crosses a verified threshold, money moves to the worker's UPI **automatically**. No claim form. No adjuster. No delay.
+ InSureGig fixes this with **parametric triggers** — when rain/AQI/curfew crosses a verified threshold, money moves to the worker's UPI **automatically**. No claim form. No adjuster. No delay.
 
 **What's excluded (strictly):** health · life · accidents · vehicle repair → **income loss only.**
 
@@ -177,7 +177,7 @@ P(trigger) > 60%  →  Pre-alert ops team + pre-compute payout exposure
 ## 📁 Repository Structure
 
 ```
-gigshield/
+ InSureGig/
 ├── frontend/              # React PWA — worker app + operator dashboard
 ├── backend/               # Spring Boot — APIs, trigger daemon, payout engine
 │   └── ml/                # XGBoost4J inference (embedded)
@@ -205,9 +205,9 @@ gigshield/
 
 ---
 
-## 🏆 GigShield vs. Traditional Insurance
+## 🏆  InSureGig vs. Traditional Insurance
 
-| Metric | 🛡️ GigShield | Traditional |
+| Metric | 🛡️  InSureGig | Traditional |
 |--------|:-----------:|:-----------:|
 | Claim process | ✅ Zero user action | ❌ Manual form |
 | Payout time | ✅ 2–4 hours | ❌ 7–30 days |
@@ -230,7 +230,7 @@ gigshield/
 
 ## 👥 Team 
 
- Shri Raksha . Avisha Catherine · M. Mohan Murali · Taqueer Ahamad
+S.Shri Raksha . Avisha Catherine · M. Mohan Murali · Taqueer Ahamad
 
 ---
 
