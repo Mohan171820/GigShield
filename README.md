@@ -48,6 +48,20 @@ auto-triggered payouts when weather, pollution, or shutdowns halt their hustle.
 | **Auto-Payout** | ₹350 → UPI in 2hrs | ₹280 → UPI in 2hrs | ₹500 → UPI in 2hrs |
 
 ---
+🛡️* ##The "Star" Feature: 2-Level Payout Protection*
+To prevent fraud while maintaining lightning-fast payouts, we implemented a unique Dual-Layer Verification System:
+
+Level 1: The ML Shield (Automated Cluster Validation)
+When workers raise complaints (e.g., "I can't deliver due to rain in Zone A"), our ML model doesn't just look at one person. It analyzes spatial clusters.
+
+The Logic: If 50 workers from Zone A all report disruptions simultaneously during a recorded rain event, the ML model flags this as a "Legitimate Cluster."
+The Action: It automatically prepares an "Auto-Pay" batch, verifying that the complaint density matches the weather severity in that specific zone.
+Level 2: Human-in-the-Loop (Admin Verification)
+To ensure 100% integrity before the money leaves the bank, these ML-validated clusters are presented to a human Admin.
+
+The Logic: The Admin sees the ML's recommendation: "98% Confidence: Heavy Rain in Zone A affecting 120 workers."
+The Action: The Admin does a final sanity check (cross-referencing with live weather feeds or local reports) and clicks "Approve Auto-Pay." This turns a process that usually takes weeks into one that takes minutes.
+
 
 ## ⚡ Platform Flow
 
