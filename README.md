@@ -5,6 +5,8 @@
 # 🛡️ InSureGig 
 ### *No paperwork. No waiting. Just protection.*
 
+*P.S-Sometimes while logging you, you may face an issue where it takes longer to direct to the user. It happens sometimes because of rendering. Mostly this doesn't occurs, it is very rare but if occurred please don't panic wait for few mins or refresh and retry*
+
 AI-powered parametric income insurance for India's **Q-Commerce delivery partners** —  
 auto-triggered payouts when weather, pollution, or shutdowns halt their hustle.
 
