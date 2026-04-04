@@ -1,0 +1,25 @@
+# GigShield GitIgnore
+# Ignore build artifacts
+backend/target/
+target/
+*.class
+
+# Ignore IDE settings
+.idea/
+.vscode/
+*.iml
+*.iws
+
+# Ignore sensitive/local config if any
+# backend/src/main/resources/application-local.properties
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore test output files
+*.json
+*.txt
+!data.sql
+!pom.xml
+!*.java
