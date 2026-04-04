@@ -16,7 +16,6 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(base_dir)
 print(f"Working directory set to: {base_dir}", file=sys.stderr)
 
-
 print("="*60)
 print("🚀 Starting Insurance Prediction API Server (OLD MODEL)")
 print("="*60)
