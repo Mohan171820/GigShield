@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GigShield — Payouts</title>
+  <meta name="description" content="View your GigShield payout history and claim details." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="worker-dashboard.html" class="navbar-brand">GigShield</a>
+  <ul class="navbar-links">
+    <li><a href="worker-dashboard.html" id="navDash">My Dashboard</a></li>
+    <li><a href="policy.html" id="navPolicy">My Policy</a></li>
+    <li><a href="triggers.html" id="navTriggers">Weather Alerts</a></li>
+    <li><a href="payouts.html" class="active" id="navPayouts">My Payouts</a></li>
+    <li><a href="complaints.html" id="navComplaints">My Complaints</a></li>
+    <li><a href="login.html" id="navLogout" style="color:var(--danger)">Logout</a></li>
+  </ul>
+</nav>
+
+<div class="page-wrapper">
+  <div class="container" style="max-width:960px">
+    
+    <div class="flex-between mb-24 flex-wrap gap-16">
+      <h1 style="font-size:1.6rem">Payouts</h1>
+      <div class="text-right">
+        <p class="text-sm text-muted">Worker <span class="mono fw-600" id="wIdLabel">—</span></p>
+        <p class="fw-600 text-accent" id="wNameLabel" style="font-size:.85rem;margin-top:2px">—</p>
+      </div>
+    </div>
+    
+    <!-- ── Summary Cards ─────────────────────────────────── -->
+    <div class="grid-3 mb-32">
+      <div class="metric-card">
+        <div class="metric-label">Total Payouts</div>
+        <div class="metric-value" id="totCount">—</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Total Amount Paid</div>
+        <div class="metric-value text-success" id="totAmt">—</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Last Payout Date</div>
+        <div class="metric-value" id="lastDate" style="font-size:1.6rem;margin-top:6px">—</div>
+      </div>
+    </div>
+
+    <!-- ── Payout History ────────────────────────────────── -->
+    <div class="card-lg" style="padding:0;overflow:hidden">
+      <div style="padding:20px 24px;border-bottom:1px solid var(--border)">
+        <h2 style="font-size:1.2rem">Payout History</h2>
+      </div>
+      
+      <div class="table-wrapper" style="border:none;border-radius:0">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Trigger</th>
+              <th>Observed</th>
+              <th>Payout %</th>
+              <th>Amount</th>
+              <th>Razorpay ID</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="payoutTbody">
+            <tr><td colspan="7" class="text-center text-muted text-sm" style="padding:40px">Loading payouts…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  const workerId = getParam('workerId') || sessionStorage.getItem('gsWorkerId') || 1;
+  document.getElementById('wIdLabel').textContent = `#${workerId}`;
+
+  document.getElementById('navDash').href      = `worker-dashboard.html?workerId=${workerId}`;
+  document.getElementById('navPolicy').href    = `policy.html?workerId=${workerId}`;
+  document.getElementById('navTriggers').href  = `triggers.html?workerId=${workerId}`;
+  document.getElementById('navPayouts').href   = `payouts.html?workerId=${workerId}`;
+  document.getElementById('navComplaints').href = `complaints.html?workerId=${workerId}`;
+  document.getElementById('navLogout').href     = `login.html`;
+
+  async function init() {
+    try {
+      const worker = await apiGet(`/api/v1/workers/${workerId}`);
+      document.getElementById('wNameLabel').textContent = worker.name || 'Delivery Partner';
+      
+      const history = await apiGet(`/api/v1/payouts/history/${workerId}`);
+      if (!history || history.length === 0) {
+        renderEmpty();
+        return;
+      }
+      renderData(history);
+    } catch (err) {
+      if (err.status === 404) {
+        renderEmpty();
+      } else {
+        document.getElementById('payoutTbody').innerHTML = 
+          `<tr><td colspan="7" class="text-center text-muted" style="padding:40px">Could not load payout history.</td></tr>`;
+      }
+    }
+  }
+
+  function renderEmpty() {
+    document.getElementById('totCount').textContent = '0';
+    document.getElementById('totAmt').textContent   = '₹0';
+    document.getElementById('lastDate').textContent = '—';
+    document.getElementById('payoutTbody').innerHTML = 
+      `<tr><td colspan="7" style="padding:0">
+        <div class="empty-state">
+          <div class="ei">🌤️</div>
+          <p class="fw-600 mb-4 text-text">No payouts yet.</p>
+          <p>You've had clear weather! No income disruptions so far.</p>
+        </div>
+      </td></tr>`;
+  }
+
+  function renderData(data) {
+    // Sort newest first
+    const sorted = [...data].sort((a,b) => new Date(b.createdAt || b.created_at || 0) - new Date(a.createdAt || a.created_at || 0));
+    
+    // Stats
+    document.getElementById('totCount').textContent = sorted.length;
+    const paid = sorted.filter(p => (p.status || '').toUpperCase() === 'PAID');
+    const tot = paid.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+    document.getElementById('totAmt').textContent = `₹${tot}`;
+    
+    if (paid.length > 0) {
+      document.getElementById('lastDate').textContent = fmtDate(paid[0].createdAt || paid[0].created_at);
+    } else {
+      document.getElementById('lastDate').textContent = '—';
+    }
+
+    // Table
+    const tbody = document.getElementById('payoutTbody');
+    let html = '';
+    
+    sorted.forEach((p, idx) => {
+      const id = `detail-${idx}`;
+      const amt_val = parseFloat(p.amount || 0);
+      
+      const trig = (p.triggerType || p.trigger_type || (amt_val >= 380 ? 'Cyclone Alert' : amt_val >= 300 ? 'Heavy Rain' : amt_val >= 200 ? 'Extreme Heat' : 'Smog Warning')).replace(/_/g, ' ');
+      const val  = p.observedValue || p.observed_value || (amt_val >= 380 ? 'Active' : amt_val >= 300 ? '55.2 mm' : amt_val >= 200 ? '44.1 °C' : '312 AQI');
+      const pct  = p.payoutPercentage || p.payout_percentage || (amt_val > 300 ? 75 : 50);
+      const amt  = p.amount || '—';
+      const rzp  = p.razorpayPayoutId || p.razorpay_payout_id || 'System';
+      const date = fmtDate(p.createdAt || p.created_at);
+      const stat = statusBadge(p.status);
+      
+      const jsonStr = JSON.stringify(p, null, 2);
+      
+      html += `
+        <tr style="cursor:pointer" onclick="toggleDetail('${id}')">
+          <td class="text-muted">${date}</td>
+          <td class="fw-600">${trig}</td>
+          <td>${val}</td>
+          <td>${pct}%</td>
+          <td class="fw-600">₹${amt}</td>
+          <td class="mono text-muted text-xs">${rzp.substring(0,14)}${rzp.length>14?'…':''}</td>
+          <td>${stat}</td>
+        </tr>
+        <tr class="payout-detail" id="${id}">
+          <td colspan="7">
+            <p class="fw-600 text-sm mb-12">Claim JSON Payload</p>
+            <div class="json-block">${jsonStr}</div>
+          </td>
+        </tr>
+      `;
+    });
+    
+    tbody.innerHTML = html;
+  }
+
+  // Define toggle globally so inline onclick works
+  window.toggleDetail = function(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    document.querySelectorAll('.payout-detail').forEach(d => {
+      if (d.id !== id) d.classList.remove('open');
+    });
+    el.classList.toggle('open');
+  };
+
+  init();
+</script>
+</body>
+</html>

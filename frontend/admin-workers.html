@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GigShield — Admin Workers</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { background: #f4f5f7; }
+    .navbar-admin-tag { background: var(--accent-bg); color: var(--accent); border-radius: 999px; padding: 3px 10px; font-size: .72rem; font-weight: 700; text-transform: uppercase; margin-left: 10px; }
+  </style>
+</head>
+<body>
+
+<script>
+  if (sessionStorage.getItem('gsRole') !== 'admin') {
+    location.replace('login.html');
+  }
+</script>
+
+<nav class="navbar">
+  <div class="flex-center gap-8">
+    <a href="dashboard.html" class="navbar-brand">GigShield</a>
+    <span class="navbar-admin-tag">Admin</span>
+  </div>
+  <ul class="navbar-links">
+    <li><a href="dashboard.html">Analytics</a></li>
+    <li><a href="admin-workers.html" class="active">Workers</a></li>
+    <li><a href="admin-transactions.html">Transactions</a></li>
+    <li><a href="admin-complaints.html">Complaints</a></li>
+    <li>
+      <a href="login.html" onclick="sessionStorage.clear()" style="color:var(--danger)">Logout</a>
+    </li>
+  </ul>
+</nav>
+
+<div class="page-wrapper">
+  <div class="container" style="max-width:1000px">
+
+    <div class="flex-between mb-24 flex-wrap gap-16">
+      <div>
+        <h1 style="font-size:1.8rem;margin-bottom:4px">Worker Directory</h1>
+        <p class="text-muted text-sm">Look up specific worker details and activity.</p>
+      </div>
+    </div>
+
+    <!-- Search Tool -->
+    <div class="card mb-32" style="background:#fff;border-color:var(--border)">
+      <h3 class="mb-12" style="font-size:1rem">Search by ID</h3>
+      <div style="display:flex;gap:12px;max-width:400px">
+        <input type="tel" id="searchWorkerId" placeholder="Enter Worker ID" class="w-full" style="padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius-sm)" />
+        <button class="btn btn-primary" onclick="searchWorker()">Search</button>
+      </div>
+      <div id="searchError" class="alert alert-danger mt-12" style="display:none"></div>
+    </div>
+
+    <!-- Worker Profile -->
+    <div id="workerProfile" style="display:none">
+      <div class="card-white mb-24">
+        <div class="flex-between flex-wrap gap-16">
+          <div>
+            <h2 id="wName" style="font-size:1.5rem;margin-bottom:4px">—</h2>
+            <p class="text-sm text-muted" id="wMeta">—</p>
+          </div>
+          <div style="text-align:right">
+            <p class="text-xs text-muted">UPI ID</p>
+            <p class="mono fw-600" id="wUpi">—</p>
+          </div>
+        </div>
+        <div class="divider" style="margin:16px 0"></div>
+        <div class="grid-4" style="gap:16px">
+          <div>
+            <p class="text-xs fw-600 text-muted" style="text-transform:uppercase">Weekly Hours</p>
+            <p class="fw-600" style="font-size:1.2rem;margin-top:4px" id="wHours">—</p>
+          </div>
+          <div>
+            <p class="text-xs fw-600 text-muted" style="text-transform:uppercase">Tenure</p>
+            <p class="fw-600" style="font-size:1.2rem;margin-top:4px" id="wTenure">—</p>
+          </div>
+          <div>
+            <p class="text-xs fw-600 text-muted" style="text-transform:uppercase">City</p>
+            <p class="fw-600" style="font-size:1.2rem;margin-top:4px" id="wCity">—</p>
+          </div>
+          <div>
+            <p class="text-xs fw-600 text-muted" style="text-transform:uppercase">Platform</p>
+            <p class="fw-600" style="font-size:1.2rem;margin-top:4px" id="wPlatform">—</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Worker Features/Activity -->
+      <div class="card-white mt-24">
+        <h3 class="mb-16">ML Features / Risk Factors</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Factor</th><th>Value</th></tr></thead>
+            <tbody id="workerFeaturesBody">
+              <tr><td colspan="2" class="text-muted text-center" style="padding:16px">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Worker Complaints History -->
+      <div class="card-white mt-24">
+        <h3 class="mb-16">Complaint History</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Date / Time</th>
+                <th>Category</th>
+                <th>Place / Location</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="workerComplaintsBody">
+              <tr><td colspan="4" class="text-center text-muted" style="padding:24px">Loading complaints...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  async function searchWorker() {
+    const wId = document.getElementById('searchWorkerId').value;
+    const errEl = document.getElementById('searchError');
+    errEl.style.display = 'none';
+
+    if (!wId || wId < 1) {
+      errEl.textContent = 'Enter a valid Worker ID.';
+      errEl.style.display = 'flex';
+      return;
+    }
+
+    try {
+      const worker = await apiGet(`/api/v1/workers/${wId}`);
+      document.getElementById('wName').textContent = worker.name || 'Unknown';
+      document.getElementById('wMeta').textContent = `${(worker.platform || '').replace(/_/g, ' ')} · ${worker.city || 'Unknown'} — ${worker.zone || '—'}`;
+      document.getElementById('wUpi').textContent  = worker.upiId || worker.upi_id || '—';
+      
+      document.getElementById('wHours').textContent = `${worker.weeklyActiveHours || worker.weekly_active_hours || 0} hrs`;
+      document.getElementById('wTenure').textContent = `${worker.tenureWeeks || worker.tenure_weeks || 0} wks`;
+      document.getElementById('wCity').textContent = `${worker.city || '—'} (${worker.zone || '—'})`;
+      document.getElementById('wPlatform').textContent = (worker.platform || '').replace(/_/g, ' ');
+
+      document.getElementById('workerProfile').style.display = 'block';
+
+      // Load features & complaints
+      loadFeatures(wId);
+      loadWorkerComplaints(wId);
+    } catch (err) {
+      errEl.textContent = 'Worker not found.';
+      errEl.style.display = 'flex';
+      document.getElementById('workerProfile').style.display = 'none';
+    }
+  }
+
+  async function loadFeatures(wId) {
+    const tbody = document.getElementById('workerFeaturesBody');
+    try {
+      const ml = await apiGet(`/api/v1/ml/predict/${wId}`);
+      const features = ml.features || ml.input_features || {};
+      const keys = Object.keys(features);
+      if (keys.length === 0) {
+         tbody.innerHTML = '<tr><td colspan="2" class="text-muted text-center">No features available</td></tr>';
+         return;
+      }
+      tbody.innerHTML = keys.map(k => `<tr><td>${featureLabel(k)}</td><td class="fw-600">${parseFloat(features[k]).toFixed(2)}</td></tr>`).join('');
+    } catch (_) {
+      tbody.innerHTML = '<tr><td colspan="2" class="text-muted text-center">No features available</td></tr>';
+    }
+  }
+
+  async function loadWorkerComplaints(wId) {
+    const tbody = document.getElementById('workerComplaintsBody');
+    try {
+      const data = await apiGet(`/api/v1/complaints/worker/${wId}`);
+      if (!data || !data.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted" style="padding:24px">No previous complaints found.</td></tr>';
+        return;
+      }
+
+      // Sort newest first
+      const sorted = [...data].sort((a,b) => 
+        new Date(b.createdAt || b.created_at || 0) - new Date(a.createdAt || a.created_at || 0)
+      );
+
+      tbody.innerHTML = sorted.map(c => {
+        const ts = c.createdAt || c.created_at || c.submittedAt || c.submitted_at;
+        const rawStatus = c.status || c.complaintStatus || c.complaint_status || c.status_label || 'PENDING';
+        return `
+          <tr>
+            <td>
+              <div class="fw-600">${fmtDate(ts)}</div>
+              <div class="text-muted text-xs">${fmtTime(ts)}</div>
+            </td>
+            <td>${(c.category || '').replace(/_/g, ' ')}</td>
+            <td class="text-sm">${c.description || '—'}</td>
+            <td>${statusBadge(rawStatus)}</td>
+          </tr>
+        `;
+      }).join('');
+    } catch (_) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted" style="padding:24px">Could not load complaints history.</td></tr>';
+    }
+  }
+
+  // Handle URL param search (e.g. ?search=1)
+  const autoSearchId = new URLSearchParams(location.search).get('search');
+  if (autoSearchId) {
+    document.getElementById('searchWorkerId').value = autoSearchId;
+    searchWorker();
+  }
+</script>
+</body>
+</html>
