@@ -1,19 +1,18 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install gcc and build tools (required for scikit-learn)
 RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy and install dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy model files and code
+# Install your exact NumPy version
+RUN pip install --no-cache-dir numpy==2.4.1
+RUN pip install --no-cache-dir scikit-learn==1.3.0 pandas==2.0.3 flask==2.3.0 flask-cors==4.0.0 joblib==1.3.2 gunicorn==21.2.0
+
 COPY *.pkl .
 COPY api_server.py .
 
-# Run the server
 CMD ["gunicorn", "api_server:app", "--bind", "0.0.0.0:10000"]
