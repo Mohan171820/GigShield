@@ -63,6 +63,32 @@ public class XGBoostInferenceService {
      * @return ClaimPredictionResponseDTO containing eligibility and payout amount.
      */
     public ClaimPredictionResponseDTO predictClaimEligibility(FeatureRequestDTO features) {
+        
+        // --- 1. Fraud Detection Layer ---
+        // A. Device spoofing detection
+        if (features.isGps_spoofed()) {
+            log.warn("[FRAUD-DETECT] Device level anomaly detected. Flagging for review.");
+            return ClaimPredictionResponseDTO.builder()
+                    .eligible(false)
+                    .fraudFlagged(true)
+                    .fraudReason("Mock GPS/Device Location Spoofing Detected")
+                    .status("error")
+                    .build();
+        }
+        
+        // B. Spatial Anomaly Detection (Worker reports 30mm rain, but Zone is 0mm)
+        boolean isRainAnomaly = features.getRain_mm() > 20.0 && features.getZone_avg_rain_mm() < 2.0;
+        if (isRainAnomaly) {
+            log.warn("[FRAUD-DETECT] Spatial weather anomaly detected. Flagging for review.");
+            return ClaimPredictionResponseDTO.builder()
+                    .eligible(false)
+                    .fraudFlagged(true)
+                    .fraudReason("Individual reported metrics deviate significantly from Zonal truth data.")
+                    .status("error")
+                    .build();
+        }
+
+        // --- 2. Inference Layer ---
         if (mockMode) {
             log.info("[ML-MOCK] Returning fixed eligible claim (₹350).");
             return ClaimPredictionResponseDTO.builder()

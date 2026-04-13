@@ -2,6 +2,7 @@ package com.gigshield.controller;
 
 import com.gigshield.dto.ClaimPredictionResponseDTO;
 import com.gigshield.dto.FeatureRequestDTO;
+import com.gigshield.dto.PayoutResultDTO;
 import com.gigshield.entity.Claim;
 import com.gigshield.entity.Complaint;
 import com.gigshield.entity.Policy;
@@ -156,11 +157,35 @@ public class ComplaintController {
                 
                 // 1. Get current 7 weather/AQI features for the worker's city
                 FeatureRequestDTO features = mlDataService.aggregateFeaturesForWorker(cleanWorkerId);
-                
+
                 // 2. Query the remote FastAPI XGBoost model
                 ClaimPredictionResponseDTO mlResult = inferenceService.predictClaimEligibility(features);
                 
-                if (mlResult.isEligible()) {
+                if (mlResult.isFraudFlagged()) {
+                    log.warn("[ML-AUTO-PILOT] 🚨 Fraud Flagged for Complaint ID: {}. Reason: {}", saved.getId(), mlResult.getFraudReason());
+                    saved.setStatus(Complaint.ComplaintStatus.PENDING); // Keep complaint pending for manual intervention
+                    complaintRepository.save(saved);
+                    
+                    // Create a claim but mark it under fraud review to keep records of the attempt
+                    List<Policy> policies = policyRepository.findByWorkerIdAndStatus(cleanWorkerId, Policy.PolicyStatus.ACTIVE);
+                    if (!policies.isEmpty()) {
+                        Claim fraudClaim = new Claim();
+                        fraudClaim.setWorker(worker);
+                        fraudClaim.setPolicy(policies.get(0));
+                        fraudClaim.setTriggerType(Claim.TriggerType.HEAVY_RAIN); // Or parse as usual
+                        fraudClaim.setPayoutAmount(BigDecimal.ZERO);
+                        fraudClaim.setStatus(Claim.ClaimStatus.FRAUD_REVIEW);
+                        fraudClaim.setFraudFlagged(true);
+                        claimRepository.save(fraudClaim);
+                    }
+                    
+                    return ResponseEntity.ok(Map.of(
+                        "id", saved.getId(),
+                        "autoPaid", false,
+                        "fraudFlagged", true,
+                        "message", "⚠️ Automatic Check Paused: Claim flagged for manual review due to data anomalies. (" + mlResult.getFraudReason() + ")"
+                    ));
+                } else if (mlResult.isEligible()) {
                     log.info("[ML-AUTO-PILOT] ✅ Conditions met! Triggering automatic payout of ₹{}", mlResult.getClaim_amount());
                     
                     List<Policy> policies = policyRepository.findByWorkerIdAndStatus(cleanWorkerId, Policy.PolicyStatus.ACTIVE);
@@ -180,21 +205,33 @@ public class ComplaintController {
                         claim.setThresholdValue(35.0);
                         claim.setPayoutAmount(BigDecimal.valueOf(mlResult.getClaim_amount()));
                         claim.setTriggeredAt(LocalDateTime.now());
-                        claim.setStatus(Claim.ClaimStatus.PAID); // Map directly to PAID if ML approves
+                        claim.setStatus(Claim.ClaimStatus.INITIATED); // Start as initiated for logic
                         
                         Claim savedClaim = claimRepository.save(claim);
-                        payoutService.processClaimPayout(savedClaim);
+                        PayoutResultDTO payoutResult = payoutService.processClaimPayout(savedClaim);
                         
-                        // AUTO-RESOLVE the complaint
-                        saved.setStatus(Complaint.ComplaintStatus.RESOLVED);
-                        complaintRepository.save(saved);
-                        
-                        return ResponseEntity.ok(Map.of(
-                            "id", saved.getId(),
-                            "autoPaid", true,
-                            "payoutAmount", mlResult.getClaim_amount(),
-                            "message", "✅ Automatic Approval: Conditions verified! Payout of ₹" + mlResult.getClaim_amount() + " sent via UPI."
-                        ));
+                        if (payoutResult.getStatus() == PayoutResultDTO.PayoutStatus.SUCCESS) {
+                            // AUTO-RESOLVE the complaint
+                            saved.setStatus(Complaint.ComplaintStatus.RESOLVED);
+                            complaintRepository.save(saved);
+                            
+                            return ResponseEntity.ok(Map.of(
+                                "id", saved.getId(),
+                                "autoPaid", true,
+                                "payoutAmount", mlResult.getClaim_amount(),
+                                "message", "✅ Automatic Approval: Conditions verified! Payout of ₹" + mlResult.getClaim_amount() + " sent via UPI."
+                            ));
+                        } else {
+                            // Hit coverage cap or other payout failure
+                            saved.setStatus(Complaint.ComplaintStatus.REJECTED);
+                            complaintRepository.save(saved);
+                            
+                            return ResponseEntity.ok(Map.of(
+                                "id", saved.getId(),
+                                "autoPaid", false,
+                                "message", "❌ Payout Failed: " + payoutResult.getStatusDescription()
+                            ));
+                        }
                     }
                 } else if ("success".equalsIgnoreCase(mlResult.getStatus())) {
                     // Logic for automatic rejection!

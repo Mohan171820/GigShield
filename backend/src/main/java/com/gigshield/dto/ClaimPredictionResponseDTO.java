@@ -23,4 +23,8 @@ public class ClaimPredictionResponseDTO {
     private String message;
     
     private String timestamp;
+
+    private boolean fraudFlagged;
+    
+    private String fraudReason;
 }

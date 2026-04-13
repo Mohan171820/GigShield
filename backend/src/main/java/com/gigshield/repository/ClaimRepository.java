@@ -16,4 +16,7 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
     java.math.BigDecimal sumTotalPayouts();
 
     java.util.List<Claim> findTop10ByOrderByCreatedAtDesc();
+
+    @org.springframework.data.jpa.repository.Query("SELECT COALESCE(SUM(c.payoutAmount), 0) FROM Claim c WHERE c.policy.id = :policyId AND c.status = 'PAID'")
+    java.math.BigDecimal sumPaidPayoutsByPolicyId(@org.springframework.data.repository.query.Param("policyId") Long policyId);
 }

@@ -75,6 +75,11 @@ public class PayoutController {
 
         // Process the payout immediately
         PayoutResultDTO result = payoutService.processClaimPayout(savedClaim);
+        
+        if (result.getStatus() == PayoutResultDTO.PayoutStatus.FAILED) {
+             return ResponseEntity.badRequest().body("Payout failed: " + result.getStatusDescription());
+        }
+        
         return ResponseEntity.ok(result);
     }
 

@@ -53,6 +53,33 @@ public class PayoutService {
         log.info("[PAYOUT] Initiating payout for Claim ID={} | Worker={} | UPI={} | Amount=₹{}",
                 claim.getId(), worker.getName(), worker.getUpiId(), claim.getPayoutAmount());
 
+        // --- Coverage Cap Logic ---
+        if (claim.getPolicy() != null) {
+            BigDecimal totalPaid = claimRepository.sumPaidPayoutsByPolicyId(claim.getPolicy().getId());
+            BigDecimal maxAllowed = claim.getPolicy().getMaxWeeklyPayout();
+            
+            if (totalPaid.add(claim.getPayoutAmount()).compareTo(maxAllowed) > 0) {
+                log.warn("[PAYOUT-BLOCKED] Coverage Cap Exceeded for PolicyID={}. Max Allowed: ₹{}, Total Already Paid: ₹{}, Current Claim: ₹{}", 
+                        claim.getPolicy().getId(), maxAllowed, totalPaid, claim.getPayoutAmount());
+                
+                claim.setStatus(Claim.ClaimStatus.REJECTED);
+                claimRepository.save(claim);
+                
+                return PayoutResultDTO.builder()
+                        .claimId(claim.getId())
+                        .workerId(worker.getId())
+                        .workerName(worker.getName())
+                        .upiId(worker.getUpiId())
+                        .amountPaid(BigDecimal.ZERO)
+                        .currency("INR")
+                        .status(PayoutResultDTO.PayoutStatus.FAILED)
+                        .statusDescription("Coverage Cap Exceeded. Max weekly payout limit reached.")
+                        .initiatedAt(initiatedAt)
+                        .completedAt(LocalDateTime.now())
+                        .build();
+            }
+        }
+
         if (sandboxMode) {
             return processSandboxPayout(claim, worker, initiatedAt);
         } else {
