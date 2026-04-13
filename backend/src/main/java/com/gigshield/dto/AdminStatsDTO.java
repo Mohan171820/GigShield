@@ -17,4 +17,9 @@ public class AdminStatsDTO {
     private BigDecimal burningCostRate;
     private BigDecimal lossRatio;
     private List<Claim> recentActivity;
+
+    public long getTotalWorkers() { return totalWorkers; }
+    public void setTotalWorkers(long totalWorkers) { this.totalWorkers = totalWorkers; }
+    public long getActivePolicies() { return activePolicies; }
+    public BigDecimal getTotalPayoutsPaid() { return totalPayoutsPaid; }
 }

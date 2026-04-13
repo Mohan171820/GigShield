@@ -56,8 +56,31 @@ public class Claim {
 
     private Boolean fraudFlagged = false;
 
-    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    public void setPaidAt(LocalDateTime t) { this.paidAt = t; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+
+    public Long getId() { return id; }
+    public Worker getWorker() { return worker; }
+    public Policy getPolicy() { return policy; }
+    public TriggerType getTriggerType() { return triggerType; }
+    public Double getObservedValue() { return observedValue; }
+    public BigDecimal getPayoutAmount() { return payoutAmount; }
+    public ClaimStatus getStatus() { return status; }
+    public java.time.LocalDateTime getTriggeredAt() { return triggeredAt; }
+
+    // Explicit Setters for Payout System logic (Bypassing Lombok build issues)
+    public void setWorker(Worker w) { this.worker = w; }
+    public void setPolicy(Policy p) { this.policy = p; }
+    public void setTriggerType(TriggerType t) { this.triggerType = t; }
+    public void setObservedValue(Double v) { this.observedValue = v; }
+    public void setThresholdValue(Double v) { this.thresholdValue = v; }
+    public void setPayoutPercentage(BigDecimal p) { this.payoutPercentage = p; }
+    public void setPayoutAmount(BigDecimal a) { this.payoutAmount = a; }
+    public void setTriggeredAt(LocalDateTime t) { this.triggeredAt = t; }
+    public void setStatus(ClaimStatus s) { this.status = s; }
+    public void setFraudFlagged(Boolean f) { this.fraudFlagged = f; }
 
     // Frontend compatibility getters
     @com.fasterxml.jackson.annotation.JsonProperty("amount")

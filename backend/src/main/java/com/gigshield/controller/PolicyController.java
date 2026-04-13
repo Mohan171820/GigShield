@@ -17,12 +17,15 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-@Slf4j
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @RestController
 @RequestMapping("/api/v1/policies")
 @RequiredArgsConstructor
 public class PolicyController {
 
+    private static final Logger log = LoggerFactory.getLogger(PolicyController.class);
     private final PolicyRepository policyRepository;
     private final WorkerRepository workerRepository;
     private final com.gigshield.repository.ClaimRepository claimRepository;

@@ -61,6 +61,31 @@ public class Policy {
     @Column(nullable = false)
     private PolicyStatus status; 
 
+    public Long getId() { return id; }
+    public Worker getWorker() { return worker; }
+    public String getZone() { return zone; }
+    public Tier getTier() { return tier; }
+    public BigDecimal getBasePremium() { return basePremium; }
+    public BigDecimal getDynamicMultiplier() { return dynamicMultiplier; }
+    public BigDecimal getFinalPremium() { return finalPremium; }
+    public BigDecimal getMaxWeeklyPayout() { return maxWeeklyPayout; }
+    public Integer getRiskScore() { return riskScore; }
+    public LocalDate getWeekStartDate() { return weekStartDate; }
+    public LocalDate getWeekEndDate() { return weekEndDate; }
+    public PolicyStatus getStatus() { return status; }
+
+    public void setWorker(Worker worker) { this.worker = worker; }
+    public void setTier(Tier tier) { this.tier = tier; }
+    public void setZone(String zone) { this.zone = zone; }
+    public void setBasePremium(BigDecimal p) { this.basePremium = p; }
+    public void setDynamicMultiplier(BigDecimal m) { this.dynamicMultiplier = m; }
+    public void setFinalPremium(BigDecimal p) { this.finalPremium = p; }
+    public void setMaxWeeklyPayout(BigDecimal p) { this.maxWeeklyPayout = p; }
+    public void setRiskScore(Integer s) { this.riskScore = s; }
+    public void setWeekStartDate(LocalDate d) { this.weekStartDate = d; }
+    public void setWeekEndDate(LocalDate d) { this.weekEndDate = d; }
+    public void setStatus(PolicyStatus s) { this.status = s; }
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

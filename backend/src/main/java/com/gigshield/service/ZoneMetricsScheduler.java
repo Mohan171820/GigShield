@@ -14,12 +14,15 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
-@Slf4j
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 @EnableScheduling
 @RequiredArgsConstructor
 public class ZoneMetricsScheduler {
 
+    private static final Logger log = LoggerFactory.getLogger(ZoneMetricsScheduler.class);
     private final ZoneMetricsRepository zoneMetricsRepository;
     private final WeatherService weatherService;
     private final AQIService aqiService;

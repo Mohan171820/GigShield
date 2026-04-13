@@ -16,11 +16,14 @@ import java.util.Map;
  *
  * AQI scale used: CPCB India standard (same as US AQI for our purposes).
  */
-@Slf4j
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 @RequiredArgsConstructor
 public class AQIService {
 
+    private static final Logger log = LoggerFactory.getLogger(AQIService.class);
     private final RestTemplate restTemplate;
 
     @Value("${gigshield.api.iqair.key}")
@@ -66,38 +69,28 @@ public class AQIService {
             Map<String, Object> current    = (Map<String, Object>) data.get("current");
             Map<String, Object> pollution  = (Map<String, Object>) current.get("pollution");
 
-            int aqius = ((Number) pollution.get("aqius")).intValue();
-            return AQIData.builder()
-                    .city(city)
-                    .currentAqi(aqius)
-                    .avgAqi(aqius)   
-                    .category(categorizeAQI(aqius))
-                    .build();
-        } catch (Exception e) {
-            log.error("Failed to parse IQAir response: {}", e.getMessage());
-            return getMockAQI(city);
-        }
+        int aqius = ((Number) pollution.get("aqius")).intValue();
+        return new AQIData(city, aqius, aqius, categorizeAQI(aqius));
+    } catch (Exception e) {
+        log.error("Failed to parse IQAir response: {}", e.getMessage());
+        return getMockAQI(city);
     }
+}
 
 
-    private AQIData getMockAQI(String city) {
-        if (city == null) city = "Generic";
-        int aqi = switch (city.toLowerCase()) {
-            case "delhi"     -> 320;  
-            case "mumbai"    -> 150;  
-            case "bangalore" -> 90;   
-            case "chennai"   -> 110;  
-            case "hyderabad" -> 130;  
-            case "kolkata"   -> 200;  
-            default          -> 140;
-        };
-        return AQIData.builder()
-                .city(city)
-                .currentAqi(aqi)
-                .avgAqi(aqi)
-                .category(categorizeAQI(aqi))
-                .build();
-    }
+private AQIData getMockAQI(String city) {
+    if (city == null) city = "Generic";
+    int aqi = switch (city.toLowerCase()) {
+        case "delhi"     -> 320;  
+        case "mumbai"    -> 150;  
+        case "bangalore" -> 90;   
+        case "chennai"   -> 110;  
+        case "hyderabad" -> 130;  
+        case "kolkata"   -> 200;  
+        default          -> 140;
+    };
+    return new AQIData(city, aqi, aqi, categorizeAQI(aqi));
+}
 
     private String categorizeAQI(int aqi) {
         if (aqi <= 50)  return "GOOD";
@@ -108,12 +101,20 @@ public class AQIService {
         return "SEVERE";
     }
 
-    @Data
-    @lombok.Builder
     public static class AQIData {
         private String city;
         private int currentAqi;
         private int avgAqi;   // Historical/seasonal average from ZoneMetrics
         private String category;
+
+        public AQIData(String city, int currentAqi, int avgAqi, String category) {
+            this.city = city;
+            this.currentAqi = currentAqi;
+            this.avgAqi = avgAqi;
+            this.category = category;
+        }
+
+        public int getCurrentAqi() { return currentAqi; }
+        public int getAvgAqi() { return avgAqi; }
     }
 }

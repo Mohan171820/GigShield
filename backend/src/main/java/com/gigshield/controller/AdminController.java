@@ -18,11 +18,15 @@ import com.gigshield.dto.PayoutResultDTO;
 import com.gigshield.entity.Claim;
 import com.gigshield.entity.Complaint;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @RestController
 @RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
 public class AdminController {
 
+    private static final Logger log = LoggerFactory.getLogger(AdminController.class);
     private final WorkerRepository workerRepository;
     private final PolicyRepository policyRepository;
     private final ClaimRepository claimRepository;
@@ -34,6 +38,7 @@ public class AdminController {
             @PathVariable Long id,
             @RequestBody Map<String, Object> body) {
         
+        log.info("[ADMIN-APPROVAL] Attempting payout for complaint {}", id);
         try {
             double amount = Double.parseDouble(String.valueOf(body.get("amount")));
 
@@ -43,6 +48,14 @@ public class AdminController {
             }
 
             Complaint complaint = optionalComplaint.get();
+            
+            // Validate status: Must be VERIFIED (ML_VERIFIED) or REVIEWED/ACCEPTED (APPROVED)
+            if (complaint.getStatus() == Complaint.ComplaintStatus.RESOLVED) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Complaint is already resolved."));
+            }
+            if (complaint.getStatus() == Complaint.ComplaintStatus.REJECTED) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Cannot approve a rejected complaint."));
+            }
 
             // Find tracking claim or create logic
             Claim claim = claimRepository.findAll().stream()
@@ -52,7 +65,6 @@ public class AdminController {
                     .orElse(null);
 
             if (claim == null) {
-                // If claim was missing, we generate one to tie payout
                 claim = new Claim();
                 claim.setWorker(complaint.getWorker());
                 java.util.List<Policy> policies = policyRepository.findByWorkerIdAndStatus(complaint.getWorker().getId(), Policy.PolicyStatus.ACTIVE);
@@ -74,7 +86,7 @@ public class AdminController {
                 
                 return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "razorpayPayoutId", payoutResult.getRazorpayPayoutId() != null ? payoutResult.getRazorpayPayoutId() : "pout_mock" + System.currentTimeMillis(),
+                    "razorpayPayoutId", payoutResult.getRazorpayPayoutId() != null ? payoutResult.getRazorpayPayoutId() : "pout_mock_" + System.currentTimeMillis(),
                     "workerId", complaint.getWorker().getId(),
                     "amount", amount
                 ));
@@ -83,6 +95,7 @@ public class AdminController {
             }
 
         } catch (Exception e) {
+            log.error("[ADMIN-APPROVAL] Error: {}", e.getMessage());
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
     }

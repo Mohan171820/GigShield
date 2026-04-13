@@ -10,11 +10,14 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 
-@Slf4j
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 @RequiredArgsConstructor
 public class WeatherService {
 
+    private static final Logger log = LoggerFactory.getLogger(WeatherService.class);
     private final RestTemplate restTemplate;
 
     @Value("${gigshield.api.weatherbit.key}")
@@ -72,16 +75,7 @@ public class WeatherService {
         double uv = ((Number) current.getOrDefault("uv", 5.0)).doubleValue();
         double precipAccum = ((Number) current.getOrDefault("precip", 0.0)).doubleValue();
 
-        return WeatherData.builder()
-                .city(city)
-                .temperatureCelsius(temp)
-                .rainfallMmPerHour(rain)
-                .humidity(humidity)
-                .cloudCover(clouds)
-                .uvIndex(uv)
-                .precipitation(precipAccum)
-                .cycloneAlerted(false)
-                .build();
+        return new WeatherData(city, temp, rain, humidity, clouds, uv, precipAccum, false);
     }
 
     @SuppressWarnings("unchecked")
@@ -94,33 +88,27 @@ public class WeatherService {
             maxTemp = Math.max(maxTemp, ((Number) entry.getOrDefault("temp", 0.0)).doubleValue());
             totalRain += ((Number) entry.getOrDefault("precip", 0.0)).doubleValue();
         }
-        return WeatherForecast.builder()
-                .city(city)
-                .weekAvgTempCelsius(maxTemp)
-                .weekTotalRainfallMm(totalRain)
-                .build();
+        return new WeatherForecast(city, maxTemp, totalRain);
     }
 
     private WeatherData getMockWeather(String city) {
         if (city == null) city = "Generic";
         return switch (city.toLowerCase()) {
-            case "bangalore"  -> WeatherData.builder().city(city).temperatureCelsius(27.0).rainfallMmPerHour(15.5).humidity(65).cloudCover(20).uvIndex(7).precipitation(10).build();
-            case "delhi"      -> WeatherData.builder().city(city).temperatureCelsius(39.0).rainfallMmPerHour(0.0).humidity(15).cloudCover(5).uvIndex(11).precipitation(0).build();
-            case "mumbai"     -> WeatherData.builder().city(city).temperatureCelsius(31.0).rainfallMmPerHour(42.0).humidity(85).cloudCover(90).uvIndex(3).precipitation(50).build();
-            default           -> WeatherData.builder().city(city).temperatureCelsius(32.0).rainfallMmPerHour(8.0).humidity(50).cloudCover(30).uvIndex(5).precipitation(5).build();
+            case "bangalore"  -> new WeatherData(city, 27.0, 15.5, 65, 20, 7, 10, false);
+            case "delhi"      -> new WeatherData(city, 39.0, 0.0, 15, 5, 11, 0, false);
+            case "mumbai"     -> new WeatherData(city, 31.0, 42.0, 85, 90, 3, 50, false);
+            default           -> new WeatherData(city, 32.0, 8.0, 50, 30, 5, 5, false);
         };
     }
 
     private WeatherForecast getMockForecast(String city) {
         if (city == null) city = "Generic";
         return switch (city.toLowerCase()) {
-            case "mumbai"  -> WeatherForecast.builder().city(city).weekAvgTempCelsius(31.0).weekTotalRainfallMm(120.0).build();
-            default        -> WeatherForecast.builder().city(city).weekAvgTempCelsius(33.0).weekTotalRainfallMm(20.0).build();
+            case "mumbai"  -> new WeatherForecast(city, 31.0, 120.0);
+            default        -> new WeatherForecast(city, 33.0, 20.0);
         };
     }
 
-    @Data
-    @lombok.Builder
     public static class WeatherData {
         private String city;
         private double temperatureCelsius;
@@ -131,13 +119,43 @@ public class WeatherService {
         private double precipitation;
         private boolean cycloneAlerted;
         private String imdAlertLevel;
+
+        public WeatherData(String city, double temperatureCelsius, double rainfallMmPerHour, 
+                           double humidity, double cloudCover, double uvIndex, 
+                           double precipitation, boolean cycloneAlerted) {
+            this.city = city;
+            this.temperatureCelsius = temperatureCelsius;
+            this.rainfallMmPerHour = rainfallMmPerHour;
+            this.humidity = humidity;
+            this.cloudCover = cloudCover;
+            this.uvIndex = uvIndex;
+            this.precipitation = precipitation;
+            this.cycloneAlerted = cycloneAlerted;
+        }
+
+        public String getCity() { return city; }
+        public double getTemperatureCelsius() { return temperatureCelsius; }
+        public double getRainfallMmPerHour() { return rainfallMmPerHour; }
+        public double getHumidity() { return humidity; }
+        public double getCloudCover() { return cloudCover; }
+        public double getUvIndex() { return uvIndex; }
+        public double getPrecipitation() { return precipitation; }
+        public boolean isCycloneAlerted() { return cycloneAlerted; }
+        public String getImdAlertLevel() { return imdAlertLevel; }
     }
 
-    @Data
-    @lombok.Builder
     public static class WeatherForecast {
         private String city;
         private double weekAvgTempCelsius;
         private double weekTotalRainfallMm;
+
+        public WeatherForecast(String city, double weekAvgTempCelsius, double weekTotalRainfallMm) {
+            this.city = city;
+            this.weekAvgTempCelsius = weekAvgTempCelsius;
+            this.weekTotalRainfallMm = weekTotalRainfallMm;
+        }
+
+        public double getWeekAvgTempCelsius() { return weekAvgTempCelsius; }
+        public double getWeekTotalRainfallMm() { return weekTotalRainfallMm; }
     }
 }

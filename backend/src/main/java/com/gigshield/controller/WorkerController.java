@@ -2,11 +2,14 @@ package com.gigshield.controller;
 
 import com.gigshield.entity.Worker;
 import com.gigshield.repository.WorkerRepository;
+import com.gigshield.repository.ZoneMetricsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/workers")
@@ -14,10 +17,31 @@ import java.util.List;
 public class WorkerController {
 
     private final WorkerRepository workerRepository;
+    private final ZoneMetricsRepository zoneMetricsRepository;
 
     @PostMapping
-    public ResponseEntity<Worker> createWorker(@RequestBody Worker worker) {
+    public ResponseEntity<?> createWorker(@RequestBody Worker worker) {
+        // --- REGIONAL RISK / CAPACITY CHECK ---
+        String city = worker.getCity();
+        String zone = worker.getZone();
+
+        if (city != null && zone != null) {
+            long disruptions = zoneMetricsRepository.countDisruptions(city, zone, LocalDate.now().minusDays(1));
+            if (disruptions > 0) {
+                return ResponseEntity.status(403).body(Map.of(
+                    "message", "Platform Capacity Reached: We have temporarily suspended new enrollments due to high regional risk."
+                ));
+            }
+        }
+
         return ResponseEntity.ok(workerRepository.save(worker));
+    }
+
+    @GetMapping("/zone")
+    public ResponseEntity<List<Worker>> getWorkersByZone(
+            @RequestParam String city,
+            @RequestParam String zone) {
+        return ResponseEntity.ok(workerRepository.findByCityIgnoreCaseAndZoneIgnoreCase(city, zone));
     }
 
     @GetMapping("/{id}")
@@ -43,28 +67,20 @@ public class WorkerController {
         return ResponseEntity.ok(workerRepository.findAll());
     }
 
-    @GetMapping("/zone")
-    public ResponseEntity<List<Worker>> getWorkersByZone(
-            @RequestParam String city,
-            @RequestParam String zone) {
-        return ResponseEntity.ok(workerRepository.findByCityIgnoreCaseAndZoneIgnoreCase(city, zone));
-    }
-
     @GetMapping("/check/{phoneNumber}")
     public ResponseEntity<Boolean> checkPhoneExists(@PathVariable String phoneNumber) {
         return ResponseEntity.ok(workerRepository.existsByPhoneNumber(phoneNumber));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody java.util.Map<String, String> credentials) {
-      
+    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
         String idStr = credentials.get("id");
         if (idStr == null) idStr = credentials.get("workerId");
-        
+
         String password = credentials.get("password");
 
         if (idStr == null || password == null) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Worker ID and Password are required."));
+            return ResponseEntity.badRequest().body(Map.of("error", "Worker ID and Password are required."));
         }
 
         try {

@@ -8,11 +8,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-@Slf4j
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 @RequiredArgsConstructor
 public class XGBoostInferenceService {
 
+    private static final Logger log = LoggerFactory.getLogger(XGBoostInferenceService.class);
     private final RestTemplate restTemplate;
 
     @Value("${gigshield.api.ml.base-url}")

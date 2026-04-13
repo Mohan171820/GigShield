@@ -44,4 +44,18 @@ public class RegistrationRequestDTO {
     private List<String> coverageTypes; 
     
     private String tier = "STANDARD"; 
+
+    public Long getWorkerId() { return workerId; }
+    public String getName() { return name; }
+    public String getPhoneNumber() { return phoneNumber; }
+    public String getCity() { return city; }
+    public String getUpiId() { return upiId; }
+    public String getPassword() { return password; }
+    public String getPlatform() { return platform; }
+    public String getZone() { return zone; }
+    public Double getWeeklyActiveHours() { return weeklyActiveHours; }
+    public Integer getTenureWeeks() { return tenureWeeks; }
+    public Integer getOrdersThisMonth() { return ordersThisMonth; }
+    public Double getAvgDailyEarnings() { return avgDailyEarnings; }
+    public String getTier() { return tier; }
 }

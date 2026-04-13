@@ -13,20 +13,15 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Core payout engine for GigShield.
- *
- * Flow:
- *  1. Triggered when a parametric claim is auto-initiated.
- *  2. Fetches the claimant worker's UPI ID from their profile.
- *  3. Sends payout via Razorpay Payouts API (or sandbox mock if enabled).
- *  4. Updates Claim status to PAID with Razorpay reference ID.
- */
-@Slf4j
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 @RequiredArgsConstructor
 public class PayoutService {
 
+    private static final Logger log = LoggerFactory.getLogger(PayoutService.class);
     private final ClaimRepository claimRepository;
 
     @Value("${gigshield.payment.razorpay.key-id}")
@@ -87,9 +82,6 @@ public class PayoutService {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Sandbox Mode — Simulates a successful UPI payout
-    // ─────────────────────────────────────────────────────────────────────────
 
     private PayoutResultDTO processSandboxPayout(Claim claim, Worker worker, LocalDateTime initiatedAt) {
         log.info("[SANDBOX] Simulating UPI transfer of ₹{} to UPI ID: {}",
@@ -124,9 +116,6 @@ public class PayoutService {
                 .build();
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Live Mode — Real Razorpay Payouts API
-    // ─────────────────────────────────────────────────────────────────────────
 
     private PayoutResultDTO processRazorpayLivePayout(Claim claim, Worker worker, LocalDateTime initiatedAt) {
         log.warn("[RAZORPAY-LIVE] Live payouts are temporarily disabled in MVP. Falling back to Sandbox mode.");
