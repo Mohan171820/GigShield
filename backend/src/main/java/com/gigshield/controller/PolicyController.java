@@ -41,10 +41,10 @@ public class PolicyController {
             BigDecimal totalPremiums = policyRepository.sumTotalPremiums();
             if (totalPaid != null && totalPremiums != null && totalPremiums.compareTo(BigDecimal.ZERO) > 0) {
                 BigDecimal lossRatio = totalPaid.divide(totalPremiums, 4, java.math.RoundingMode.HALF_UP);
-                if (lossRatio.compareTo(new BigDecimal("0.85")) > 0) {
+                if (lossRatio.compareTo(new BigDecimal("0.95")) > 0) {
                     return ResponseEntity.status(403).body(java.util.Map.of(
                         "error", "Enrolments Suspended",
-                        "details", "The platform is currently at high risk (Loss Ratio > 85%). New policies are temporarily paused."
+                        "details", "The platform is currently at high risk (Loss Ratio > 95%). New policies are temporarily paused."
                     ));
                 }
             }
