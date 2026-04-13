@@ -99,6 +99,8 @@ def predict():
         
         response = {
             'status': 'success',
+            'eligible': bool(is_eligible),        # Added back as requested by friend
+            'claim_amount': claim_amount,         # Added back as requested by friend
             'decision': decision,
             'confidence': float(probability),
             'zoneWeatherVerified': True,   # Default/Mock implementation
@@ -142,6 +144,8 @@ def predict_batch():
                 results.append({
                     'index': i,
                     'error': f'Missing fields: {missing}',
+                    'eligible': False,
+                    'claim_amount': 0,
                     'decision': 'REJECT',
                     'suggestedPayoutAmount': 0
                 })
@@ -165,6 +169,8 @@ def predict_batch():
 
             results.append({
                 'index': i,
+                'eligible': bool(is_eligible),
+                'claim_amount': claim_amount,
                 'decision': decision,
                 'confidence': float(probability),
                 'zoneWeatherVerified': True,
