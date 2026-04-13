@@ -22,11 +22,19 @@ public class WorkerController {
     @PostMapping
     public ResponseEntity<?> createWorker(@RequestBody Worker worker) {
         // --- REGIONAL RISK / CAPACITY CHECK ---
+        // Only block enrollment when BOTH city and zone are explicitly provided
+        // AND there is a confirmed disruption in that exact zone TODAY.
         String city = worker.getCity();
         String zone = worker.getZone();
 
-        if (city != null && zone != null) {
-            long disruptions = zoneMetricsRepository.countDisruptions(city, zone, LocalDate.now().minusDays(1));
+        boolean cityProvided = city != null && !city.isBlank();
+        boolean zoneProvided = zone != null && !zone.isBlank();
+
+        if (cityProvided && zoneProvided) {
+            // Only check disruptions from today (not yesterday) to avoid stale data blocking
+            long disruptions = zoneMetricsRepository.countDisruptions(
+                city.trim(), zone.trim(), LocalDate.now()
+            );
             if (disruptions > 0) {
                 return ResponseEntity.status(403).body(Map.of(
                     "message", "Platform Capacity Reached: We have temporarily suspended new enrollments due to high regional risk."
