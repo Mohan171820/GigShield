@@ -43,6 +43,13 @@ public class WorkerController {
         return ResponseEntity.ok(workerRepository.findAll());
     }
 
+    @GetMapping("/zone")
+    public ResponseEntity<List<Worker>> getWorkersByZone(
+            @RequestParam String city,
+            @RequestParam String zone) {
+        return ResponseEntity.ok(workerRepository.findByCityIgnoreCaseAndZoneIgnoreCase(city, zone));
+    }
+
     @GetMapping("/check/{phoneNumber}")
     public ResponseEntity<Boolean> checkPhoneExists(@PathVariable String phoneNumber) {
         return ResponseEntity.ok(workerRepository.existsByPhoneNumber(phoneNumber));

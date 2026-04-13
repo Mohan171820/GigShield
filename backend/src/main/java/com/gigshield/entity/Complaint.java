@@ -33,6 +33,25 @@ public class Complaint {
     @Enumerated(EnumType.STRING)
     private ComplaintStatus status = ComplaintStatus.PENDING;
 
+    // --- ML Metric Fields ---
+    @Column(name = "ml_decision")
+    private String mlDecision;
+
+    @Column(name = "ml_confidence")
+    private Float mlConfidence;
+
+    @Column(name = "fraud_score")
+    private Float fraudScore;
+
+    @Column(name = "worker_activity_score")
+    private Float workerActivityScore;
+
+    @Column(name = "zone_weather_verified")
+    private Boolean zoneWeatherVerified;
+
+    @Column(name = "suggested_payout_amount")
+    private Integer suggestedPayoutAmount;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

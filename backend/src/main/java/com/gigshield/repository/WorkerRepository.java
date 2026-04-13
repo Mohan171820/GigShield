@@ -10,4 +10,6 @@ import java.util.Optional;
 public interface WorkerRepository extends JpaRepository<Worker, Long> {
     Optional<Worker> findByPhoneNumber(String phoneNumber);
     boolean existsByPhoneNumber(String phoneNumber);
+    java.util.List<Worker> findByCityIgnoreCaseAndZoneIgnoreCase(String city, String zone);
+    int countByCityIgnoreCaseAndZoneIgnoreCase(String city, String zone);
 }

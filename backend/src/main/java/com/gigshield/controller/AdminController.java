@@ -12,6 +12,12 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.Map;
 
+import com.gigshield.repository.ComplaintRepository;
+import com.gigshield.service.payment.PayoutService;
+import com.gigshield.dto.PayoutResultDTO;
+import com.gigshield.entity.Claim;
+import com.gigshield.entity.Complaint;
+
 @RestController
 @RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
@@ -20,6 +26,66 @@ public class AdminController {
     private final WorkerRepository workerRepository;
     private final PolicyRepository policyRepository;
     private final ClaimRepository claimRepository;
+    private final ComplaintRepository complaintRepository;
+    private final PayoutService payoutService;
+
+    @PostMapping("/complaints/{id}/approve-payout")
+    public ResponseEntity<?> approvePayout(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body) {
+        
+        try {
+            double amount = Double.parseDouble(String.valueOf(body.get("amount")));
+
+            java.util.Optional<Complaint> optionalComplaint = complaintRepository.findById(id);
+            if (optionalComplaint.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Complaint not found"));
+            }
+
+            Complaint complaint = optionalComplaint.get();
+
+            // Find tracking claim or create logic
+            Claim claim = claimRepository.findAll().stream()
+                    .filter(c -> c.getWorker() != null && c.getWorker().getId().equals(complaint.getWorker().getId()))
+                    .filter(c -> c.getStatus() == Claim.ClaimStatus.INITIATED || c.getStatus() == Claim.ClaimStatus.FRAUD_REVIEW)
+                    .findFirst()
+                    .orElse(null);
+
+            if (claim == null) {
+                // If claim was missing, we generate one to tie payout
+                claim = new Claim();
+                claim.setWorker(complaint.getWorker());
+                java.util.List<Policy> policies = policyRepository.findByWorkerIdAndStatus(complaint.getWorker().getId(), Policy.PolicyStatus.ACTIVE);
+                claim.setPolicy(policies.isEmpty() ? null : policies.get(0));
+                claim.setTriggerType(Claim.TriggerType.HEAVY_RAIN); 
+                claim.setTriggeredAt(java.time.LocalDateTime.now());
+            }
+
+            claim.setPayoutAmount(BigDecimal.valueOf(amount));
+            claim.setStatus(Claim.ClaimStatus.INITIATED);
+            claimRepository.save(claim);
+
+            PayoutResultDTO payoutResult = payoutService.processClaimPayout(claim);
+
+            if (payoutResult.getStatus() == PayoutResultDTO.PayoutStatus.SUCCESS) {
+                complaint.setStatus(Complaint.ComplaintStatus.RESOLVED);
+                complaint.setSuggestedPayoutAmount((int) amount);
+                complaintRepository.save(complaint);
+                
+                return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "razorpayPayoutId", payoutResult.getRazorpayPayoutId() != null ? payoutResult.getRazorpayPayoutId() : "pout_mock" + System.currentTimeMillis(),
+                    "workerId", complaint.getWorker().getId(),
+                    "amount", amount
+                ));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("error", payoutResult.getStatusDescription()));
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
