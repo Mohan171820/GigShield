@@ -16,6 +16,7 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(base_dir)
 print(f"Working directory set to: {base_dir}", file=sys.stderr)
 
+
 print("="*60)
 print("🚀 Starting Insurance Prediction API Server (OLD MODEL)")
 print("="*60)
@@ -93,14 +94,21 @@ def predict():
             claim_amount = round(float(claim_amount), 2)
         
         # 7. Prepare response
+        decision = "APPROVE" if is_eligible else "REJECT"
+        reason_codes = ["WEATHER_CONFIRMED", "WORKER_WAS_ACTIVE"] if is_eligible else ["INSUFFICIENT_WEATHER_SEVERITY"]
+        
         response = {
             'status': 'success',
-            'eligible': bool(is_eligible),
+            'decision': decision,
             'confidence': float(probability),
-            'claim_amount': claim_amount,
+            'zoneWeatherVerified': True,   # Default/Mock implementation
+            'workerActivityScore': 0.85,   # Default/Mock implementation
+            'fraudRiskScore': 0.10,        # Default/Mock implementation
+            'suggestedPayoutAmount': int(claim_amount),
+            'reasonCodes': reason_codes,
             'currency': 'INR',
             'timestamp': datetime.now().isoformat(),
-            'message': f"{'✅ ELIGIBLE' if is_eligible else '❌ NOT ELIGIBLE'} - Claim amount: ₹{claim_amount}" if is_eligible else "No claim applicable"
+            'message': f"{'✅ ELIGIBLE' if is_eligible else '❌ NOT ELIGIBLE'} - Suggested Payout: ₹{int(claim_amount)}" if is_eligible else "No claim applicable"
         }
         
         print(f"📤 Response: {response}")
@@ -134,8 +142,8 @@ def predict_batch():
                 results.append({
                     'index': i,
                     'error': f'Missing fields: {missing}',
-                    'eligible': False,
-                    'claim_amount': 0
+                    'decision': 'REJECT',
+                    'suggestedPayoutAmount': 0
                 })
                 continue
             
@@ -151,11 +159,19 @@ def predict_batch():
                 claim_amount = regressor.predict(input_scaled_reg)[0]
                 claim_amount = round(float(claim_amount), 2)
             
+            
+            decision = "APPROVE" if is_eligible else "REJECT"
+            reason_codes = ["WEATHER_CONFIRMED", "WORKER_WAS_ACTIVE"] if is_eligible else ["INSUFFICIENT_WEATHER_SEVERITY"]
+
             results.append({
                 'index': i,
-                'eligible': bool(is_eligible),
+                'decision': decision,
                 'confidence': float(probability),
-                'claim_amount': claim_amount
+                'zoneWeatherVerified': True,
+                'workerActivityScore': 0.85,
+                'fraudRiskScore': 0.10,
+                'suggestedPayoutAmount': int(claim_amount),
+                'reasonCodes': reason_codes
             })
         
         return jsonify({
