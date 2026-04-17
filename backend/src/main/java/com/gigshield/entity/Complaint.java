@@ -30,8 +30,14 @@ public class Complaint {
         private Boolean sharedDeviceFlag = false;
         private java.util.List<String> riskReasons = new java.util.ArrayList<>();
         private java.time.LocalDateTime policyRegisteredAt;
+        private Boolean coverageCapApplied;
+        private Double originalRequestedAmount;
+        private Double remainingCoverageAfter;
         private java.time.LocalDateTime createdAt;
 
+        public ComplaintBuilder coverageCapApplied(Boolean b) { this.coverageCapApplied = b; return this; }
+        public ComplaintBuilder originalRequestedAmount(Double d) { this.originalRequestedAmount = d; return this; }
+        public ComplaintBuilder remainingCoverageAfter(Double d) { this.remainingCoverageAfter = d; return this; }
         public ComplaintBuilder deviceFingerprint(String f) { this.deviceFingerprint = f; return this; }
         public ComplaintBuilder ipAddress(String i) { this.ipAddress = i; return this; }
         public ComplaintBuilder sharedDeviceFlag(Boolean s) { this.sharedDeviceFlag = s; return this; }
@@ -67,6 +73,9 @@ public class Complaint {
             c.sharedDeviceFlag = this.sharedDeviceFlag != null ? this.sharedDeviceFlag : false;
             c.riskReasons = this.riskReasons != null ? this.riskReasons : new java.util.ArrayList<>();
             c.policyRegisteredAt = this.policyRegisteredAt;
+            c.coverageCapApplied = this.coverageCapApplied;
+            c.originalRequestedAmount = this.originalRequestedAmount;
+            c.remainingCoverageAfter = this.remainingCoverageAfter;
             c.createdAt = this.createdAt != null ? this.createdAt : java.time.LocalDateTime.now();
             return c;
         }
@@ -126,6 +135,15 @@ public class Complaint {
     @Column(name = "policy_registered_at")
     private LocalDateTime policyRegisteredAt;
 
+    @Column(name = "coverage_cap_applied")
+    private Boolean coverageCapApplied;
+
+    @Column(name = "original_requested_amount")
+    private Double originalRequestedAmount;
+
+    @Column(name = "remaining_coverage_after")
+    private Double remainingCoverageAfter;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -163,6 +181,15 @@ public class Complaint {
     public void setSharedDeviceFlag(Boolean s) { this.sharedDeviceFlag = s; }
     public void setRiskReasons(java.util.List<String> r) { this.riskReasons = r; }
     public void setPolicyRegisteredAt(LocalDateTime t) { this.policyRegisteredAt = t; }
+
+    public Boolean getCoverageCapApplied() { return coverageCapApplied; }
+    public void setCoverageCapApplied(Boolean b) { this.coverageCapApplied = b; }
+
+    public Double getOriginalRequestedAmount() { return originalRequestedAmount; }
+    public void setOriginalRequestedAmount(Double d) { this.originalRequestedAmount = d; }
+
+    public Double getRemainingCoverageAfter() { return remainingCoverageAfter; }
+    public void setRemainingCoverageAfter(Double d) { this.remainingCoverageAfter = d; }
 
     public enum ComplaintStatus {
         PENDING, REVIEWED, RESOLVED, REJECTED, ACCEPTED, VERIFIED

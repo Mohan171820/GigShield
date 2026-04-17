@@ -49,16 +49,16 @@ public class Worker {
     @Column(nullable = true)
     private Double avgDailyEarnings;
 
-    @Column(nullable = true) // Temporarily true to allow column creation
+    @Column(nullable = true)
     private String password;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String plan = "STANDARD";
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String planType = "STANDARD";
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Double coverageAmount = 3000.0;
 
     @Column(nullable = false, updatable = false)

@@ -100,13 +100,6 @@ public class AdminController {
                 complaint.setStatus(Complaint.ComplaintStatus.RESOLVED);
                 complaint.setSuggestedPayoutAmount((int) amount);
                 
-                // Save audit fields to complaint
-                if (body.containsKey("coverageCapApplied")) {
-                    log.info("[ADMIN-APPROVAL] Audit: CapApplied={}, OriginalAmt={}, Remaining={}",
-                            body.get("coverageCapApplied"), body.get("originalRequestedAmount"), body.get("remainingCoverageAfter"));
-                }
-                
-                complaintRepository.save(complaint);
                 
                 return ResponseEntity.ok(Map.of(
                     "success", true,
