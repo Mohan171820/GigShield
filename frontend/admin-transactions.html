@@ -67,11 +67,12 @@
               <th>Worker ID</th>
               <th>Type / Event</th>
               <th>Amount</th>
+              <th>Risk Profile</th>
               <th>Status</th>
             </tr>
           </thead>
           <tbody id="txnTbody">
-            <tr><td colspan="6" class="text-center text-muted" style="padding:32px">Loading transactions...</td></tr>
+            <tr><td colspan="7" class="text-center text-muted" style="padding:32px">Loading transactions...</td></tr>
           </tbody>
         </table>
       </div>
@@ -96,7 +97,7 @@
       currentTransactions = data || [];
       
       if (!currentTransactions.length) {
-        tbody.innerHTML = `<tr><td colspan="6" style="padding:32px;text-align:center">
+        tbody.innerHTML = `<tr><td colspan="7" style="padding:32px;text-align:center">
           <div class="empty-state" style="padding:24px">
             <div class="ei">📊</div><p>No transactions recorded yet.</p>
           </div></td></tr>`;
@@ -111,6 +112,9 @@
          const time = fmtTime(p.createdAt || p.created_at);
          const type = (p.triggerType || p.trigger_type || 'PAYOUT').replace(/_/g, ' ');
          const rzp = p.razorpayPayoutId || p.razorpay_payout_id || '—';
+         const fraud = p.fraudScore || p.fraud_score || 0;
+         const reason = p.riskReasons || p.risk_reasons || (fraud > 0.7 ? 'High Frequency' : 'None');
+         const riskLevel = fraud > 0.7 ? 'HIGH' : fraud > 0.3 ? 'MEDIUM' : 'LOW';
          
          return `
           <tr>
@@ -119,12 +123,31 @@
             <td class="fw-600">#${p.workerId || p.worker_id || '—'}</td>
             <td>Payout / ${type}</td>
             <td class="text-success fw-600">₹${p.amount || 0}</td>
+             <td>
+               <div style="display:flex;flex-direction:column;gap:4px">
+                 <div style="display:flex;gap:4px;flex-wrap:wrap">
+                   <span style="font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:5px;
+                     ${fraud > 0.65 ? 'background:#fff1f2;color:#be123c;border:1px solid #fecdd3' :
+                       fraud > 0.3  ? 'background:#fefce8;color:#92400e;border:1px solid #fde68a' :
+                                      'background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0'}">
+                     B: ${fraud > 0.65 ? 'High' : fraud > 0.3 ? 'Med' : 'Low'}
+                   </span>
+                   <span style="font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:5px;
+                     ${fraud*0.4 > 0.25 ? 'background:#fff7ed;color:#c2410c;border:1px solid #fed7aa' :
+                       fraud*0.4 > 0.12 ? 'background:#fefce8;color:#92400e;border:1px solid #fde68a' :
+                                          'background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0'}">
+                     Z: ${fraud*0.4 > 0.25 ? 'High' : fraud*0.4 > 0.12 ? 'Med' : 'Low'}
+                   </span>
+                 </div>
+                 <span class="text-xs text-muted" title="${reason}">${fraud.toFixed(2)} score</span>
+               </div>
+             </td>
             <td>${statusBadge(p.status)}</td>
           </tr>
          `;
       }).join('');
     } catch (_) {
-      tbody.innerHTML = `<tr><td colspan="6" class="text-muted text-sm text-center" style="padding:24px">Could not load transactions from server.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" class="text-muted text-sm text-center" style="padding:24px">Could not load transactions from server.</td></tr>`;
     }
   }
 
@@ -133,15 +156,19 @@
     
     try {
       // Manual row mapping with strict character sanitization
-      const rows = currentTransactions.map(p => ({
-        'Date': fmtDate(p.createdAt || p.created_at),
-        'Time': fmtTime(p.createdAt || p.created_at),
-        'Transfer ID': (p.razorpayPayoutId || p.razorpay_payout_id || '—').toString(),
-        'Worker ID': `#${(p.workerId || p.worker_id || '—')}`,
-        'Type': (p.triggerType || p.trigger_type || 'PAYOUT').replace(/_/g, ' '),
-        'Amount (Rs)': parseFloat(p.amount || 0),
-        'Status': p.status || '—'
-      }));
+      const rows = currentTransactions.map(p => {
+        const fraud = p.fraudScore || p.fraud_score || 0;
+        return {
+          'Date': fmtDate(p.createdAt || p.created_at),
+          'Time': fmtTime(p.createdAt || p.created_at),
+          'Transfer ID': (p.razorpayPayoutId || p.razorpay_payout_id || '—').toString(),
+          'Worker ID': `#${(p.workerId || p.worker_id || '—')}`,
+          'Type': (p.triggerType || p.trigger_type || 'PAYOUT').replace(/_/g, ' '),
+          'Amount (Rs)': parseFloat(p.amount || 0),
+          'Fraud Score': fraud.toFixed(2),
+          'Status': p.status || '—'
+        };
+      });
 
       const worksheet = XLSX.utils.json_to_sheet(rows);
       const workbook = XLSX.utils.book_new();
@@ -169,14 +196,18 @@
       doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 28);
 
       // Explicit data mapping to ensure only standard characters are in the PDF
-      const tableData = currentTransactions.map(p => [
-        `${fmtDate(p.createdAt || p.created_at)} ${fmtTime(p.createdAt || p.created_at)}`,
-        (p.razorpayPayoutId || p.razorpay_payout_id || '—').toString(),
-        `Worker #${p.workerId || p.worker_id || '—'}`,
-        (p.triggerType || p.trigger_type || 'PAYOUT').replace(/_/g, ' '),
-        `Rs. ${p.amount || 0}`,
-        p.status || '—'
-      ]);
+      const tableData = currentTransactions.map(p => {
+        const fraud = p.fraudScore || p.fraud_score || 0;
+        return [
+          `${fmtDate(p.createdAt || p.created_at)} ${fmtTime(p.createdAt || p.created_at)}`,
+          (p.razorpayPayoutId || p.razorpay_payout_id || '—').toString(),
+          `Worker #${p.workerId || p.worker_id || '—'}`,
+          (p.triggerType || p.trigger_type || 'PAYOUT').replace(/_/g, ' '),
+          `Rs. ${p.amount || 0}`,
+          fraud.toFixed(2),
+          p.status || '—'
+        ];
+      });
 
       if (typeof doc.autoTable !== 'function') {
         alert("PDF Table extension failed to load. Please refresh.");
@@ -185,7 +216,7 @@
 
       doc.autoTable({
         startY: 35,
-        head: [['Date / Time', 'Transfer ID', 'Worker ID', 'Type', 'Amount', 'Status']],
+        head: [['Date / Time', 'Transfer ID', 'Worker ID', 'Type', 'Amount', 'Risk', 'Status']],
         body: tableData,
         theme: 'striped',
         headStyles: { fillColor: [45, 85, 255] },

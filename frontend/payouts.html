@@ -49,7 +49,7 @@
     </div>
 
     <!-- ── Payout History ────────────────────────────────── -->
-    <div class="card-lg" style="padding:0;overflow:hidden">
+    <div class="card-lg" style="padding:0;overflow:hidden;margin-top:40px">
       <div style="padding:20px 24px;border-bottom:1px solid var(--border)">
         <h2 style="font-size:1.2rem">Payout History</h2>
       </div>
@@ -145,7 +145,6 @@
     let html = '';
     
     sorted.forEach((p, idx) => {
-      const id = `detail-${idx}`;
       const amt_val = parseFloat(p.amount || 0);
       
       const trig = (p.triggerType || p.trigger_type || (amt_val >= 380 ? 'Cyclone Alert' : amt_val >= 300 ? 'Heavy Rain' : amt_val >= 200 ? 'Extreme Heat' : 'Smog Warning')).replace(/_/g, ' ');
@@ -159,7 +158,7 @@
       const jsonStr = JSON.stringify(p, null, 2);
       
       html += `
-        <tr style="cursor:pointer" onclick="toggleDetail('${id}')">
+        <tr>
           <td class="text-muted">${date}</td>
           <td class="fw-600">${trig}</td>
           <td>${val}</td>
@@ -168,27 +167,12 @@
           <td class="mono text-muted text-xs">${rzp.substring(0,14)}${rzp.length>14?'…':''}</td>
           <td>${stat}</td>
         </tr>
-        <tr class="payout-detail" id="${id}">
-          <td colspan="7">
-            <p class="fw-600 text-sm mb-12">Claim JSON Payload</p>
-            <div class="json-block">${jsonStr}</div>
-          </td>
-        </tr>
       `;
     });
     
     tbody.innerHTML = html;
   }
 
-  // Define toggle globally so inline onclick works
-  window.toggleDetail = function(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    document.querySelectorAll('.payout-detail').forEach(d => {
-      if (d.id !== id) d.classList.remove('open');
-    });
-    el.classList.toggle('open');
-  };
 
   init();
 </script>

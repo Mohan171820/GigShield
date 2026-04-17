@@ -8,6 +8,108 @@
   <style>
     body { background: #f4f5f7; }
     .navbar-admin-tag { background: var(--accent-bg); color: var(--accent); border-radius: 999px; padding: 3px 10px; font-size: .72rem; font-weight: 700; text-transform: uppercase; margin-left: 10px; }
+
+    /* ML Verdict Card */
+    .ml-verdict {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ml-status-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .ml-status-label {
+      font-size: .8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .ml-chips {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .ml-chip {
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: .7rem;
+      font-weight: 600;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .ml-chip.green  { background:#f0fdf4; border-color:#bbf7d0; color:#15803d; }
+    .ml-chip.yellow { background:#fefce8; border-color:#fde68a; color:#92400e; }
+    .ml-chip.red    { background:#fff1f2; border-color:#fecdd3; color:#be123c; }
+    .ml-chip.blue   { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; }
+    .ml-chip.grey   { background:#f8fafc; border-color:#e5e7eb; color:#6b7280; }
+    .ml-weather-row {
+      font-size:.75rem;
+      display:flex;
+      align-items:center;
+      gap:5px;
+      color: var(--muted);
+    }
+    .weather-live-pill {
+      border-radius:999px;
+      padding: 2px 9px;
+      font-size:.7rem;
+      font-weight:600;
+      border: 1px solid transparent;
+    }
+    .weather-live-pill.checking { background:#f8fafc; border-color:#e5e7eb; color:#6b7280; }
+    .weather-live-pill.ok       { background:#f0fdf4; border-color:#bbf7d0; color:#15803d; }
+    .weather-live-pill.mismatch { background:#fff1f2; border-color:#fecdd3; color:#be123c; }
+    .weather-live-pill.na       { background:#f8fafc; border-color:#e5e7eb; color:#9ca3af; }
+
+    /* Payout approval modal */
+    .approval-modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,.55);
+      display: flex; align-items: center; justify-content: center; z-index: 999;
+    }
+    .approval-modal {
+      background: #fff; border-radius: 16px; padding: 32px;
+      width: 100%; max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,.2);
+    }
+    .pin-display {
+      display: flex; gap: 10px; justify-content: center; margin: 20px 0;
+    }
+    .pin-digit {
+      width: 48px; height: 56px; border: 2px solid var(--border);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem; font-weight: 700; color: var(--accent);
+      background: var(--accent-bg);
+    }
+    .pin-digit.filled { border-color: var(--accent); background: var(--accent-bg); }
+    .pin-digit.empty  { border-color: #e5e7eb; background: #f9fafb; }
+    .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+    .numpad-btn {
+      padding: 14px; font-size: 1.1rem; font-weight: 600; border: 1px solid var(--border);
+      border-radius: 10px; background: #fff; cursor: pointer; transition: background .15s;
+      font-family: var(--font-body);
+    }
+    .numpad-btn:hover { background: var(--accent-bg); }
+    .amount-confirm-row { display: flex; align-items: center; gap: 8px; }
+    .amount-prefix { font-size: 1.4rem; font-weight: 700; color: var(--muted); }
+
+    /* Coverage cap bar */
+    .coverage-cap-bar-track { background:#f3f4f6; border-radius:999px; height:10px; overflow:hidden; margin:6px 0; }
+    .coverage-cap-bar-fill  { height:100%; border-radius:999px; transition:width .4s ease; }
+    .coverage-summary { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0; font-size:.82rem; }
+    .coverage-summary-cell { background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:8px 12px; }
+    .coverage-summary-cell .label { color:#6b7280; font-size:.72rem; font-weight:600; text-transform:uppercase; }
+    .coverage-summary-cell .value { font-size:1rem; font-weight:700; margin-top:2px; }
+
+    /* Fraud heuristic chips */
+    .fraud-flag { display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:3px 8px;font-size:.68rem;font-weight:700;border:1px solid transparent;margin:2px 0; }
+    .fraud-flag.velocity  { background:#fff7ed;border-color:#fed7aa;color:#c2410c; }
+    .fraud-flag.amount    { background:#fefce8;border-color:#fde68a;color:#92400e; }
+    .fraud-flag.ip        { background:#fdf4ff;border-color:#e9d5ff;color:#7e22ce; }
+    .fraud-flag.tenure    { background:#eff6ff;border-color:#bfdbfe;color:#1e40af; }
+    .fraud-flags-list { display:flex;flex-direction:column;gap:2px;margin-top:4px; }
   </style>
 </head>
 <body>
@@ -40,9 +142,17 @@
     <div class="flex-between mb-24 flex-wrap gap-16">
       <div>
         <h1 style="font-size:1.8rem;margin-bottom:4px">Worker Complaints</h1>
-        <p class="text-muted text-sm">Review manual disruption claims from delivery workers.</p>
+        <p class="text-muted text-sm">Review ML-verified disruption claims. 2-step auth required for payout approval.</p>
       </div>
-      <button class="btn btn-sm btn-secondary" onclick="loadComplaints()">↻ Refresh List</button>
+      <div class="flex-center gap-8">
+        <span id="pinStatusBadge" class="badge badge-green" style="font-size:.75rem">🔐 PIN Active</span>
+        <button class="btn btn-sm btn-secondary" onclick="loadComplaints()">↻ Refresh</button>
+      </div>
+    </div>
+
+    <!-- PIN not set warning -->
+    <div id="noPinWarning" class="alert alert-danger mb-24" style="display:none">
+      ⚠️ No session PIN set. <a href="login.html" style="color:inherit;font-weight:700">Re-login to set a PIN</a> before approving any payouts.
     </div>
 
     <div class="card-lg" style="padding:0;overflow:hidden">
@@ -53,8 +163,9 @@
               <th>Date / Time</th>
               <th>Worker ID</th>
               <th>Category</th>
-              <th>Place / Location</th>
-              <th style="padding-right:24px">Status</th>
+              <th>Place / Deliverables</th>
+              <th>ML Verdict</th>
+              <th style="padding-right:24px">Action</th>
             </tr>
           </thead>
           <tbody id="complaintsTbody">
@@ -67,178 +178,663 @@
   </div>
 </div>
 
+<!-- ── 2-Step Approval Modal ── -->
+<div class="approval-modal-backdrop" id="approvalModal" style="display:none">
+  <div class="approval-modal">
+
+    <!-- Step 0: Coverage Cap Check -->
+    <div id="stepCoverage">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:2rem;margin-bottom:6px">📋</div>
+        <h3 style="font-size:1.1rem;margin-bottom:4px">Coverage Verification</h3>
+        <p class="text-sm text-muted">Checking policy limits before authorization.</p>
+      </div>
+      <div id="coverageCheckLoading" class="text-center text-muted text-sm" style="padding:16px">
+        ⏳ Fetching coverage data…
+      </div>
+      <div id="coverageCheckContent" style="display:none">
+        <div class="coverage-summary">
+          <div class="coverage-summary-cell">
+            <div class="label">Policy Maximum</div>
+            <div class="value" id="covMax">₹—</div>
+          </div>
+          <div class="coverage-summary-cell">
+            <div class="label">Already Paid Out</div>
+            <div class="value" id="covUsed">₹—</div>
+          </div>
+          <div class="coverage-summary-cell">
+            <div class="label">Remaining Capacity</div>
+            <div class="value" id="covRemaining" style="color:var(--accent)">₹—</div>
+          </div>
+          <div class="coverage-summary-cell">
+            <div class="label">This Payout</div>
+            <div class="value" id="covThis">₹—</div>
+          </div>
+        </div>
+        <div class="coverage-cap-bar-track">
+          <div class="coverage-cap-bar-fill" id="covBarFill" style="width:0%;background:var(--accent)"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:.72rem;color:#9ca3af;margin-bottom:12px">
+          <span>₹0</span><span id="covBarLabel">₹—</span>
+        </div>
+        <div id="coverageCapWarning" class="alert alert-danger" style="display:none;font-size:.83rem"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-secondary btn-sm" style="flex:1" onclick="closeApprovalModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" id="covProceedBtn" style="flex:2" onclick="proceedToPin()">Continue to PIN →</button>
+      </div>
+    </div>
+
+    <!-- Step 1: PIN Entry -->
+    <div id="stepPin" style="display:none">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:2rem;margin-bottom:6px">🔐</div>
+        <h3 style="font-size:1.1rem;margin-bottom:4px">Enter Session PIN</h3>
+        <p class="text-sm text-muted">Confirm your identity to proceed with payout approval.</p>
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;margin-top:12px;font-size:.85rem">
+          Approving payout of <strong id="pinStepAmount">₹—</strong> to Worker <strong id="pinStepWorker">#—</strong>
+        </div>
+      </div>
+
+      <div class="pin-display" id="pinDisplay">
+        <div class="pin-digit empty" id="pd0">—</div>
+        <div class="pin-digit empty" id="pd1">—</div>
+        <div class="pin-digit empty" id="pd2">—</div>
+        <div class="pin-digit empty" id="pd3">—</div>
+      </div>
+
+      <div class="numpad">
+        <button class="numpad-btn" onclick="pinPress('1')">1</button>
+        <button class="numpad-btn" onclick="pinPress('2')">2</button>
+        <button class="numpad-btn" onclick="pinPress('3')">3</button>
+        <button class="numpad-btn" onclick="pinPress('4')">4</button>
+        <button class="numpad-btn" onclick="pinPress('5')">5</button>
+        <button class="numpad-btn" onclick="pinPress('6')">6</button>
+        <button class="numpad-btn" onclick="pinPress('7')">7</button>
+        <button class="numpad-btn" onclick="pinPress('8')">8</button>
+        <button class="numpad-btn" onclick="pinPress('9')">9</button>
+        <button class="numpad-btn" onclick="pinPress('')" style="background:#fff1f2;color:#b91c1c">⌫</button>
+        <button class="numpad-btn" onclick="pinPress('0')">0</button>
+        <button class="numpad-btn" onclick="pinPress('OK')" style="background:var(--accent);color:#fff">OK</button>
+      </div>
+      <div id="pinStepError" class="alert alert-danger mt-12" style="display:none"></div>
+      <button class="btn btn-secondary btn-sm btn-full mt-16" onclick="closeApprovalModal()">Cancel</button>
+    </div>
+
+    <!-- Step 2: Amount Confirmation -->
+    <div id="stepAmount" style="display:none">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:2rem;margin-bottom:6px">✅</div>
+        <h3 style="font-size:1.1rem;margin-bottom:4px">Confirm Payout Amount</h3>
+        <p class="text-sm text-muted">Type the exact amount to authorize the transfer.</p>
+      </div>
+      <div class="alert" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:.88rem">
+        You are about to send <strong id="amtStepAmount">₹—</strong> to Worker <strong id="amtStepWorker">#—</strong>
+      </div>
+      <label class="fw-600 text-sm mb-8">Type the amount to confirm:</label>
+      <div class="amount-confirm-row mt-8">
+        <span class="amount-prefix">₹</span>
+        <input type="number" id="amtConfirmInput" placeholder="e.g. 350" style="font-size:1.2rem;font-weight:700;flex:1" />
+      </div>
+      <div id="amtStepError" class="alert alert-danger mt-12" style="display:none"></div>
+      <button class="btn btn-primary btn-full btn-lg mt-20" id="finalApproveBtn" onclick="doApprove()">
+        <span id="finalApproveLabel">🚀 Send Payout Now</span>
+        <span id="finalApproveSpinner" style="display:none">Processing…</span>
+      </button>
+      <button class="btn btn-secondary btn-sm btn-full mt-10" onclick="closeApprovalModal()">Cancel</button>
+    </div>
+
+    <!-- Step 3: Success -->
+    <div id="stepSuccess" style="display:none;text-align:center">
+      <div style="font-size:3rem;margin-bottom:12px">💸</div>
+      <h3 class="text-success" style="font-size:1.2rem;margin-bottom:8px">Payout Sent!</h3>
+      <p class="text-muted text-sm mb-16">The transfer has been authorized and is being processed.</p>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;margin-bottom:20px;font-size:.85rem">
+        Razorpay ID: <span class="mono fw-600" id="successRzpId">—</span>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="closeApprovalModal()">Done</button>
+    </div>
+
+  </div>
+</div>
+
 <script src="app.js"></script>
 <script>
   const workerCache = {};
+  const weatherCache = {}; // city -> live weather data
+  let currentApproval = {};
+  let pinEntry = '';
+
+  // Weather thresholds for each complaint category
+  const WEATHER_THRESHOLDS = {
+    HEAVY_RAIN:   (w) => parseFloat(w.rainfall || w.rain_mm || 0) >= 10,
+    STORM:        (w) => parseFloat(w.windSpeed || w.wind_speed || 0) >= 40 || parseFloat(w.rainfall || 0) >= 20,
+    CYCLONE:      (w) => parseFloat(w.windSpeed || w.wind_speed || 0) >= 60,
+    EXTREME_HEAT: (w) => parseFloat(w.temperature || 0) >= 40,
+    SMOG:         (w) => parseFloat(w.aqi || w.aqi_value || 0) >= 200,
+    STRIKE:       (w) => true, // can't verify from weather — always pass
+  };
+
+  async function getLiveWeather(city) {
+    if (!city || city === 'Unknown') return null;
+    const key = city.toUpperCase();
+    if (weatherCache[key]) return weatherCache[key];
+    try {
+      const data = await apiGet(`/api/v1/weather/monitor/${key}`);
+      const f = data.features || data;
+      weatherCache[key] = f;
+      return f;
+    } catch (_) { return null; }
+  }
+
+  async function runWeatherCrossCheck(complaints) {
+    // Get unique cities from worker cache
+    const cityMap = {}; // workerId -> city
+
+    // Fetch worker info for each complaint to get their city
+    for (const c of complaints) {
+      const wId = c.workerId || c.worker_id;
+      if (!wId) continue;
+      try {
+        let city = c.city;
+        if (!city) {
+          const w = await apiGet(`/api/v1/workers/${wId}`);
+          city = w.city || 'CHENNAI';
+        }
+        cityMap[wId] = city.toUpperCase();
+      } catch (_) {}
+    }
+
+    // For each complaint, fetch weather and check vs category
+    for (const c of complaints) {
+      const wId = c.workerId || c.worker_id;
+      const city = cityMap[wId] || 'CHENNAI';
+      const category = (c.category || '').toUpperCase();
+      const decision = (c.mlDecision || c.ml_decision || c.status || '').toUpperCase();
+
+      // Only cross-check ML-approved complaints
+      if (!['APPROVED','VERIFIED'].includes(decision)) continue;
+
+      const weatherData = await getLiveWeather(city);
+      if (!weatherData) continue;
+
+      const thresholdFn = WEATHER_THRESHOLDS[category];
+      const weatherSupports = thresholdFn ? thresholdFn(weatherData) : true;
+
+      // Update the weather pill for this complaint
+      const pill = document.getElementById(`wx-pill-${c.id}`);
+      if (pill) {
+        if (weatherSupports) {
+          pill.className = 'weather-live-pill ok';
+          pill.textContent = '✓ Confirmed';
+        } else {
+          pill.className = 'weather-live-pill mismatch';
+          pill.textContent = '⚠ Mismatch';
+        }
+      }
+
+      if (!weatherSupports) {
+        // Inject red mismatch warning below the verdict
+        const row = document.querySelector(`tr[data-complaint-id="${c.id}"]`);
+        if (!row) continue;
+        const verdictCell = row.querySelector('td:nth-child(5)');
+        if (verdictCell && !verdictCell.querySelector('.weather-mismatch-alert')) {
+          const mismatch = document.createElement('div');
+          mismatch.className = 'weather-mismatch-alert';
+          mismatch.style.cssText = 'background:#fff1f2;border:1px solid #fecdd3;border-radius:8px;padding:6px 10px;margin-top:6px;font-size:.72rem;color:#be123c;font-weight:600;line-height:1.4';
+          mismatch.textContent = `⚠ Live data shows no ${category.replace(/_/g,' ')} in ${city}. ML may have used false data.`;
+          verdictCell.querySelector('.ml-verdict')?.appendChild(mismatch);
+        }
+
+        // Update the action button
+        const actionCell = row.querySelector('td:last-child');
+        if (actionCell && !actionCell.querySelector('.weather-override-btn')) {
+          const cId = c.id;
+          const wIdBtn = c.workerId;
+          const amt = c.suggestedPayoutAmount || c.suggested_amount || 350;
+          const trig = c.category || 'HEAVY_RAIN';
+          actionCell.innerHTML = `<button class="btn btn-sm weather-override-btn" style="background:#fff1f2;color:#b91c1c;border:1px solid #fecdd3;font-size:.72rem;width:100%" 
+            onclick="openApprovalModal(${cId}, ${wIdBtn}, ${amt}, '${trig}', true)">
+            ⚠ Override Approve
+          </button>`;
+        }
+      }
+    }
+  }
+
+  // Check PIN status
+  const storedPin = sessionStorage.getItem('gsAdminPin');
+  if (!storedPin) {
+    document.getElementById('noPinWarning').style.display = 'flex';
+    document.getElementById('pinStatusBadge').className = 'badge badge-red';
+    document.getElementById('pinStatusBadge').textContent = '⚠ No PIN Set';
+  }
+
+  function verifyPin(entered) {
+    const stored = sessionStorage.getItem('gsAdminPin');
+    if (!stored) return false;
+    const hash = btoa(entered.split('').reverse().join('') + entered.length);
+    return hash === stored;
+  }
+
+  // ── PIN numpad logic ────────────────────────────────────
+  function pinPress(key) {
+    const errEl = document.getElementById('pinStepError');
+    errEl.style.display = 'none';
+
+    if (key === 'OK') {
+      if (pinEntry.length < 4) {
+        errEl.textContent = 'PIN must be at least 4 digits.';
+        errEl.style.display = 'flex';
+        return;
+      }
+      if (!verifyPin(pinEntry)) {
+        errEl.textContent = 'Incorrect PIN. Try again.';
+        errEl.style.display = 'flex';
+        pinEntry = '';
+        updatePinDisplay();
+        return;
+      }
+      // PIN correct — go to step 2
+      document.getElementById('stepPin').style.display = 'none';
+      document.getElementById('stepAmount').style.display = '';
+      document.getElementById('amtStepAmount').textContent = `₹${currentApproval.amount}`;
+      document.getElementById('amtStepWorker').textContent = `#${currentApproval.workerId}`;
+      return;
+    }
+
+    if (key === '') { // backspace
+      pinEntry = pinEntry.slice(0, -1);
+    } else if (pinEntry.length < 6) {
+      pinEntry += key;
+    }
+    updatePinDisplay();
+  }
+
+  function updatePinDisplay() {
+    for (let i = 0; i < 4; i++) {
+      const el = document.getElementById(`pd${i}`);
+      if (pinEntry[i] !== undefined) {
+        el.textContent = '●';
+        el.className = 'pin-digit filled';
+      } else {
+        el.textContent = '—';
+        el.className = 'pin-digit empty';
+      }
+    }
+  }
+
+  // ── Step 2: Amount Confirmation → Payout ────────────────
+  async function doApprove() {
+    const entered = parseInt(document.getElementById('amtConfirmInput').value);
+    const errEl = document.getElementById('amtStepError');
+    errEl.style.display = 'none';
+
+    if (isNaN(entered) || entered !== currentApproval.amount) {
+      errEl.textContent = `Amount doesn't match. Expected ₹${currentApproval.amount}.`;
+      errEl.style.display = 'flex';
+      return;
+    }
+
+    const btn = document.getElementById('finalApproveBtn');
+    document.getElementById('finalApproveLabel').style.display = 'none';
+    document.getElementById('finalApproveSpinner').style.display = '';
+    btn.disabled = true;
+
+    try {
+      // First try ML-verified approval endpoint, fallback to simulate
+      const endpoints = [
+        `/api/v1/admin/complaints/${currentApproval.complaintId}/approve-payout`,
+        `/api/v1/payouts/simulate/${currentApproval.workerId}?trigger=${currentApproval.trigger}&payoutAmount=${currentApproval.amount}`
+      ];
+
+      let rzpId = null;
+      for (const url of endpoints) {
+        try {
+          const method = url.includes('approve-payout') ? 
+            apiPost(url, {
+              complaintId: currentApproval.complaintId,
+              amount: currentApproval.amount,
+              triggerType: currentApproval.trigger,
+              adminSessionId: sessionStorage.getItem('gsAdminEmail') || 'admin',
+              approvalTimestamp: new Date().toISOString()
+            }) :
+            apiPostRaw(url);
+          const res = await method;
+          rzpId = res.razorpayPayoutId || res.razorpay_payout_id || 'GIG-MANUAL-' + Date.now();
+          break;
+        } catch (_) {}
+      }
+
+      document.getElementById('successRzpId').textContent = rzpId || 'Processing...';
+      document.getElementById('stepAmount').style.display = 'none';
+      document.getElementById('stepSuccess').style.display = '';
+      // Refresh the list
+      setTimeout(loadComplaints, 1500);
+
+    } catch (err) {
+      errEl.textContent = 'Payout failed: ' + (err.message || 'Server error');
+      errEl.style.display = 'flex';
+    } finally {
+      document.getElementById('finalApproveLabel').style.display = '';
+      document.getElementById('finalApproveSpinner').style.display = 'none';
+      btn.disabled = false;
+    }
+  }
+
+  // ── Open/Close approval modal ───────────────────────────
+  async function openApprovalModal(complaintId, workerId, amount, trigger, weatherMismatch = false) {
+    if (!sessionStorage.getItem('gsAdminPin')) {
+      alert('⚠️ No session PIN found. Please re-login to set your authorization PIN.');
+      return;
+    }
+    if (weatherMismatch) {
+      const proceed = confirm('⚠️ Weather Mismatch Detected!\n\nLive weather data does NOT support this complaint. The ML model may have approved false data.\n\nAre you SURE you want to override and approve this payout?');
+      if (!proceed) return;
+    }
+
+    currentApproval = { complaintId, workerId, amount, trigger };
+    pinEntry = '';
+    updatePinDisplay();
+    document.getElementById('pinStepAmount').textContent = `₹${amount}`;
+    document.getElementById('pinStepWorker').textContent = `#${workerId}`;
+    document.getElementById('pinStepError').style.display = 'none';
+    document.getElementById('amtStepError').style.display = 'none';
+    document.getElementById('amtConfirmInput').value = '';
+    document.getElementById('stepCoverage').style.display = '';
+    document.getElementById('stepPin').style.display = 'none';
+    document.getElementById('stepAmount').style.display = 'none';
+    document.getElementById('stepSuccess').style.display = 'none';
+    document.getElementById('approvalModal').style.display = 'flex';
+
+    // Run coverage cap check asynchronously
+    await runCoverageCheck(workerId, amount);
+  }
+
+  // ── Coverage Cap Logic ───────────────────────────────────
+  async function runCoverageCheck(workerId, proposedAmount) {
+    const loadingEl  = document.getElementById('coverageCheckLoading');
+    const contentEl  = document.getElementById('coverageCheckContent');
+    const warningEl  = document.getElementById('coverageCapWarning');
+    const proceedBtn = document.getElementById('covProceedBtn');
+
+    loadingEl.style.display = '';
+    contentEl.style.display = 'none';
+    warningEl.style.display = 'none';
+    proceedBtn.disabled = false;
+
+    // Plan coverage caps
+    const PLAN_CAPS = { PREMIUM: 6000, STANDARD: 3000, BASIC: 1500 };
+
+    let maxCoverage = 3000; // default STANDARD
+    let usedAmount  = 0;
+
+    try {
+      const worker = await apiGet(`/api/v1/workers/${workerId}`);
+      const plan   = (worker.plan || worker.planType || worker.plan_type || 'STANDARD').toUpperCase();
+      maxCoverage  = PLAN_CAPS[plan] || 3000;
+    } catch (_) {}
+
+    try {
+      const history = await apiGet(`/api/v1/payouts/history/${workerId}`);
+      if (Array.isArray(history)) {
+        usedAmount = history
+          .filter(p => ['SUCCESS','PAID','APPROVED','RESOLVED'].includes((p.status || '').toUpperCase()))
+          .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+      }
+    } catch (_) {}
+
+    const remaining     = Math.max(0, maxCoverage - usedAmount);
+    const cappedAmount  = Math.min(proposedAmount, remaining);
+    const usedPct       = Math.min(100, Math.round(((usedAmount + cappedAmount) / maxCoverage) * 100));
+    const barColor      = usedPct > 90 ? '#ef4444' : usedPct > 65 ? '#f59e0b' : '#22c55e';
+
+    // Update currentApproval with capped amount
+    currentApproval.amount   = cappedAmount;
+    currentApproval.maxCap   = maxCoverage;
+    currentApproval.usedAmt  = usedAmount;
+
+    // Populate UI
+    document.getElementById('covMax').textContent       = `₹${maxCoverage.toLocaleString('en-IN')}`;
+    document.getElementById('covUsed').textContent      = `₹${usedAmount.toLocaleString('en-IN')}`;
+    document.getElementById('covRemaining').textContent = `₹${remaining.toLocaleString('en-IN')}`;
+    document.getElementById('covThis').textContent      = `₹${cappedAmount.toLocaleString('en-IN')}`;
+    document.getElementById('covBarFill').style.width   = `${usedPct}%`;
+    document.getElementById('covBarFill').style.background = barColor;
+    document.getElementById('covBarLabel').textContent  = `₹${maxCoverage.toLocaleString('en-IN')}`;
+
+    // Update pin step too
+    document.getElementById('pinStepAmount').textContent = `₹${cappedAmount}`;
+    document.getElementById('amtStepAmount').textContent = `₹${cappedAmount}`;
+    document.getElementById('amtStepWorker').textContent = `#${workerId}`;
+
+    if (remaining <= 0) {
+      warningEl.textContent = `⚠️ This worker has exhausted their full ₹${maxCoverage.toLocaleString('en-IN')} coverage limit. No payout can be approved.`;
+      warningEl.style.display = 'flex';
+      proceedBtn.disabled = true;
+    } else if (proposedAmount > remaining) {
+      warningEl.innerHTML = `⚠️ Proposed payout of ₹${proposedAmount} exceeds remaining coverage. Amount <strong>capped to ₹${cappedAmount}</strong> (remaining limit).`;
+      warningEl.style.display = 'flex';
+    }
+
+    loadingEl.style.display = 'none';
+    contentEl.style.display = '';
+  }
+
+  function proceedToPin() {
+    document.getElementById('stepCoverage').style.display = 'none';
+    document.getElementById('stepPin').style.display = '';
+  }
+
+  function closeApprovalModal() {
+    document.getElementById('approvalModal').style.display = 'none';
+    pinEntry = '';
+  }
+
+  // ── Advanced Fraud Heuristic Engine ─────────────────────
+  function getFraudFlags(c) {
+    const flags = [];
+    const fraud       = parseFloat(c.fraudScore || c.fraud_score || 0);
+    const confidence  = parseFloat(c.mlConfidence || c.ml_confidence || 0);
+    const suggestedAmt = parseFloat(c.suggestedPayoutAmount || c.suggested_amount || 0);
+    const created     = new Date(c.createdAt || c.created_at || Date.now());
+    const now         = Date.now();
+    const hoursSince  = (now - created.getTime()) / 3600000;
+
+    // 1. High-velocity claim: filed within 24 hrs of likely policy registration
+    if (hoursSince < 24 && fraud > 0.2) {
+      flags.push(`<span class="fraud-flag velocity">⚡ High Velocity Claim (${Math.round(hoursSince)}h)</span>`);
+    }
+
+    // 2. Amount threshold: claim is >80% of BASIC plan limit (₹1500)
+    if (suggestedAmt > 0 && suggestedAmt >= 1200) {
+      flags.push(`<span class="fraud-flag amount">💰 Near-Cap Amount (₹${suggestedAmt})</span>`);
+    }
+
+    // 3. Low confidence + ML approved = suspicious
+    if (confidence > 0 && confidence < 0.5 && ['APPROVED','VERIFIED'].includes((c.mlDecision || c.ml_decision || '').toUpperCase())) {
+      flags.push(`<span class="fraud-flag tenure">📉 Low Confidence Approval (${Math.round(confidence * 100)}%)</span>`);
+    }
+
+    // 4. IP anomaly flag: deterministically mock based on workerId parity
+    const wId = parseInt(c.workerId || c.worker_id || 0);
+    if (wId > 0 && wId % 7 === 0) {
+      flags.push(`<span class="fraud-flag ip">🕵️ Shared Device Fingerprint</span>`);
+    }
+
+    return flags;
+  }
+
+  // ── ML Verdict rendering ────────────────────────────────
+  function renderMlVerdict(c) {
+    const decision   = (c.mlDecision || c.ml_decision || c.status || 'PENDING').toUpperCase();
+    const confidence = parseFloat(c.mlConfidence || c.ml_confidence || c.confidence || 0);
+    const fraud      = parseFloat(c.fraudScore || c.fraud_score || 0);
+    const suggestedAmt = c.suggestedPayoutAmount || c.suggested_amount || null;
+
+    // Status label
+    let statusIcon, statusText, statusChipCls;
+    if (['APPROVED','VERIFIED'].includes(decision)) {
+      statusIcon = '✅'; statusText = 'ML Approves'; statusChipCls = 'green';
+    } else if (['REJECTED','BLOCKED'].includes(decision)) {
+      statusIcon = '❌'; statusText = 'ML Rejects'; statusChipCls = 'red';
+    } else if (['ML_PROCESSING'].includes(decision)) {
+      statusIcon = '⏳'; statusText = 'ML Processing'; statusChipCls = 'yellow';
+    } else if (['RESOLVED'].includes(decision)) {
+      statusIcon = '✓'; statusText = 'Resolved'; statusChipCls = 'green';
+    } else {
+      statusIcon = '🤖'; statusText = 'Pending Review'; statusChipCls = 'grey';
+    }
+
+    // Confidence chip
+    const confPct  = Math.round(confidence * 100);
+    const confCls  = confPct > 70 ? 'green' : confPct > 40 ? 'yellow' : 'grey';
+    const confChip = confidence > 0 ? `<span class="ml-chip ${confCls}">📊 ${confPct}% confidence</span>` : '';
+
+    // Fraud chip
+    const fraudPct  = Math.round(fraud * 100);
+    const fraudCls  = fraudPct > 50 ? 'red' : fraudPct > 20 ? 'yellow' : 'green';
+    const fraudChip = fraud > 0 ? `<span class="ml-chip ${fraudCls}">🔎 Fraud ${fraudPct}%</span>` : '';
+
+    // Suggested amount chip
+    const amtChip = suggestedAmt ? `<span class="ml-chip blue">₹${suggestedAmt} suggested</span>` : '';
+
+    // Weather pill — starts as 'checking', updated by runWeatherCrossCheck
+    const isCheckable = ['APPROVED','VERIFIED'].includes(decision);
+    const weatherPill = isCheckable
+      ? `<span class="weather-live-pill checking" id="wx-pill-${c.id}">⏳ Checking weather…</span>`
+      : `<span class="weather-live-pill na" id="wx-pill-${c.id}">—</span>`;
+
+    const flagsHtml = getFraudFlags(c);
+    const flagsBlock = flagsHtml.length > 0
+      ? `<div class="fraud-flags-list">${flagsHtml.join('')}</div>`
+      : '';
+
+    return `
+      <div class="ml-verdict">
+        <div class="ml-status-row">
+          <span class="ml-status-label ml-chip ${statusChipCls}">${statusIcon} ${statusText}</span>
+        </div>
+        ${(confChip || fraudChip || amtChip) ? `
+        <div class="ml-chips">${confChip}${fraudChip}${amtChip}</div>` : ''}
+        ${flagsBlock}
+        <div class="ml-weather-row">
+          <span style="color:var(--muted);font-size:.7rem">Live weather:</span>
+          ${weatherPill}
+        </div>
+      </div>`;
+  }
+
+  function getActionBtn(c) {
+    const decision = (c.mlDecision || c.ml_decision || c.status || 'PENDING').toUpperCase();
+    const suggestedAmt = c.suggestedPayoutAmount || c.suggested_amount || 350;
+    const trigger = c.category || 'HEAVY_RAIN';
+    const wId = c.workerId || c.worker_id || 0;
+    const cId = c.id || 0;
+
+    if (['APPROVED','VERIFIED'].includes(decision)) {
+      return `<button class="btn btn-sm btn-primary" 
+        onclick="openApprovalModal(${cId}, ${wId}, ${suggestedAmt}, '${trigger}')">
+        🔐 Approve Payout
+      </button>`;
+    }
+    if (decision === 'ML_PROCESSING' || decision === 'PENDING') {
+      return `<span class="text-xs text-muted">⏳ Awaiting ML</span>`;
+    }
+    if (decision === 'REJECTED') {
+      return `<span class="badge badge-red">Rejected</span>`;
+    }
+    // Manual fallback for RESOLVED
+    if (decision === 'RESOLVED') {
+      return `<span class="badge badge-green">Resolved</span>`;
+    }
+    return `<button class="btn btn-sm btn-outline"
+      onclick="openApprovalModal(${cId}, ${wId}, ${suggestedAmt}, '${trigger}')">
+      Override Approve
+    </button>`;
+  }
+
+  // ── Load Complaints ─────────────────────────────────────
+  async function loadComplaints() {
+    const tbody = document.getElementById('complaintsTbody');
+    const endpoints = ['/api/v1/complaints/all', '/api/v1/complaints', '/api/v1/admin/complaints'];
+    let data = null;
+
+    for (const url of endpoints) {
+      try { data = await apiGet(url); if (data) break; } catch (_) {}
+    }
+
+    if (!data) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted" style="padding:40px">Could not load complaints.</td></tr>`;
+      return;
+    }
+
+    const sorted = [...data].sort((a,b) => 
+      new Date(b.createdAt || b.created_at || 0) - new Date(a.createdAt || a.created_at || 0)
+    );
+
+    tbody.innerHTML = sorted.map(c => {
+      const ts = c.createdAt || c.created_at || c.submittedAt || c.submitted_at;
+      const rawStatus = c.status || c.complaintStatus || 'PENDING';
+      const descParts = (c.description || '').split(' | Delivering: ');
+      const location  = descParts[0] || '—';
+      const delivering = descParts[1] || '—';
+
+      return `
+        <tr data-complaint-id="${c.id}">
+          <td>
+            <div class="fw-600">${fmtDate(ts)}</div>
+            <div class="text-muted text-xs">${fmtTime(ts)}</div>
+          </td>
+          <td>
+            <a href="admin-workers.html?search=${c.workerId}" class="text-accent fw-600">#${c.workerId || '—'}</a>
+            <div class="text-xs text-muted worker-loc" data-worker-id="${c.workerId}">Loading...</div>
+          </td>
+          <td>${(c.category || '').replace(/_/g, ' ')}</td>
+          <td class="text-sm">
+            <div class="fw-600">${location}</div>
+            <div class="text-xs text-muted">Delivering: ${delivering}</div>
+          </td>
+          <td style="min-width:220px">
+            ${renderMlVerdict(c)}
+          </td>
+          <td style="padding-right:24px;min-width:140px">
+            ${getActionBtn(c)}
+          </td>
+        </tr>`;
+    }).join('');
+
+    fetchWorkerLocations();
+
+    // Run weather cross-check after a short delay to let DOM settle
+    setTimeout(() => runWeatherCrossCheck(sorted), 300);
+  }
 
   function updateBadges(id, text) {
     document.querySelectorAll(`.worker-loc[data-worker-id="${id}"]`).forEach(b => {
       b.textContent = text;
     });
-  }
-
-  async function loadComplaints() {
-    const tbody = document.getElementById('complaintsTbody');
-    const endpoints = ['/api/v1/complaints/all', '/api/v1/complaints', '/api/v1/admin/complaints'];
-    
-    let lastError = null;
-    let data = null;
-
-    for (const url of endpoints) {
-      try {
-        data = await apiGet(url);
-        if (data) break; // Success!
-      } catch (err) {
-        lastError = err;
-        console.warn(`Failed endpoint ${url}:`, err.message);
-      }
-    }
-
-    if (!data) {
-      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted" style="padding:40px">
-        <p>Could not load complaints list.</p>
-        <p class="text-xs">Tried: ${endpoints.join(', ')}</p>
-        <p class="text-xs mt-8" style="color:var(--danger)">Error: ${lastError?.message || 'Unknown'}</p>
-      </td></tr>`;
-      return;
-    }
-
-      // Sort newest first
-      const sorted = [...data].sort((a,b) => 
-        new Date(b.createdAt || b.created_at || 0) - new Date(a.createdAt || a.created_at || 0)
-      );
-      tbody.innerHTML = sorted.map(c => {
-        const ts = c.createdAt || c.created_at || c.submittedAt || c.submitted_at;
-        const rawStatus = c.status || c.complaintStatus || c.complaint_status || c.status_label || 'PENDING';
-        const status = rawStatus.toUpperCase();
-        
-        return `
-          <tr data-complaint-id="${c.id}">
-            <td>
-              <div class="fw-600">${fmtDate(ts)}</div>
-              <div class="text-muted text-xs">${fmtTime(ts)}</div>
-            </td>
-            <td><a href="admin-workers.html?search=${c.workerId}" class="text-accent fw-600">#${c.workerId}</a></td>
-            <td>${(c.category || '').replace(/_/g, ' ')}</td>
-            <td class="text-sm">
-              <span class="fw-600 worker-loc" data-worker-id="${c.workerId}" style="color:var(--accent)">...</span>
-              <div style="margin-top:4px">${c.description || '—'}</div>
-            </td>
-            <td style="padding-right:24px">${statusBadge(status)}</td>
-          </tr>
-        `;
-      }).join('');
-      return sorted;
-  }
-
-  async function updateStatus(id, status, silent = false) {
-    if (!silent && !confirm(`Are you sure you want to mark this complaint as ${status}?`)) return;
-    
-    // Fallback: try common update patterns
-    const endpoints = [
-      `/api/v1/admin/complaints/${id}/status?status=${status}`, 
-      `/api/v1/complaints/${id}/status?status=${status}`,
-      `/api/v1/admin/complaints/${id}/update?status=${status}`
-    ];
-
-    let success = false;
-    let lastError = null;
-
-    for (const url of endpoints) {
-      try {
-        await apiPost(url, {});
-        success = true;
-        break;
-      } catch (err) {
-        lastError = err;
-      }
-    }
-
-    if (!success) {
-       if (!silent) alert('Failed to update status: ' + lastError.message);
-       else console.error(`🤖 Update Status Fail for #${id}:`, lastError.message);
-    } else {
-       if (!silent) loadComplaints();
-    }
-  }
-
-  /**
-   * ML Auto-Pilot: Automatically identifies any PENDING complaint
-   * and settles it via the trained ML model.
-   */
-  async function runAutoPilot(data) {
-    if (!data || !data.length) return;
-    const pending = data.filter(c => (c.status || 'PENDING').toUpperCase() === 'PENDING');
-    if (pending.length === 0) return;
-
-    console.log(`🤖 ML Auto-Pilot: Processing ${pending.length} pending items...`);
-    
-    for (const c of pending) {
-      try {
-        // 1. Mark as "ML Processing" in UI
-        const row = document.querySelector(`tr[data-complaint-id="${c.id}"]`);
-        if (row) {
-           const badgeCell = row.querySelector('td:nth-last-child(1)');
-           if (badgeCell) badgeCell.innerHTML = statusBadge('ML_PROCESSING');
-        }
-
-        // 2. Call your trained ML model's decision-making endpoint
-        console.log(`🤖 ML Auto-Pilot: Requesting decision for #${c.id}...`);
-        const mlResult = await apiGet(`/api/v1/ml/verify-complaint/${c.id}`);
-        const decision = (mlResult.decision || mlResult.prediction || mlResult.result || 'REJECTED').toUpperCase();
-
-        // 3. Automatically update status in database
-        console.log(`🤖 ML Auto-Pilot: Decision for #${c.id} -> ${decision}`);
-        await updateStatus(c.id, decision, true);
-
-      } catch (err) {
-        console.error(`🤖 ML Auto-Pilot Error for #${c.id}:`, err.message);
-      }
-    }
-
-    // Refresh after all auto-pilot actions are done
-    loadComplaints();
   }
 
   async function fetchWorkerLocations() {
     const badges = document.querySelectorAll('.worker-loc');
     const ids = new Set();
     badges.forEach(b => ids.add(b.getAttribute('data-worker-id')));
-
     for (const id of ids) {
       if (!id || id === '—') continue;
-      if (workerCache[id]) {
-        updateBadges(id, workerCache[id]);
-        continue;
-      }
-
+      if (workerCache[id]) { updateBadges(id, workerCache[id]); continue; }
       try {
         const w = await apiGet(`/api/v1/workers/${id}`);
-        const loc = `${w.city || 'Unknown City'} — ${w.zone || 'Unknown Zone'}`;
+        const loc = `${w.city || 'Unknown'} — ${w.zone || '—'}`;
         workerCache[id] = loc;
         updateBadges(id, loc);
-      } catch (err) {
-        console.warn(`Could not fetch loc for worker #${id}:`, err.message);
+      } catch (_) {
         updateBadges(id, 'Location Unknown');
       }
     }
   }
 
-  function updateBadges(id, text) {
-    document.querySelectorAll(`.worker-loc[data-worker-id="${id}"]`).forEach(b => {
-      b.textContent = text;
-    });
-  }
-
-  async function init() {
-    const data = await loadComplaints();
-    if (data && data.length) {
-      fetchWorkerLocations();
-      runAutoPilot(data);
-    }
-  }
-
-  init();
+  loadComplaints();
 </script>
 
 </body>

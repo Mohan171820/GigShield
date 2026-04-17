@@ -167,7 +167,15 @@
   <!-- ── Worker Panel ── -->
   <div class="worker-panel" id="workerPanel" style="display:none">
     <p class="panel-title">Welcome, Worker 👋</p>
-    <p class="text-muted text-sm mb-8">Enter your Worker ID to access your dashboard, or register if you're new.</p>
+    <p class="text-muted text-sm mb-16">Enter your Worker ID to access your dashboard, or register if you're new.</p>
+
+    <div class="backend-disclaimer">
+      <div class="bd-icon">🚀</div>
+      <div class="bd-content">
+        <strong>Backend is waking up!</strong>
+        It may take 2-3 tries to connect on your first visit. This is because we use Render's high-reliability backend.
+      </div>
+    </div>
 
     <div class="tab-row">
       <button class="tab-btn active" id="tabReturn" onclick="switchTab('return')">Returning Worker</button>
@@ -207,7 +215,15 @@
   <!-- ── Admin Panel ── -->
   <div class="admin-panel" id="adminPanel" style="display:none">
     <p class="panel-title">Insurer / Admin Login 🏢</p>
-    <p class="text-muted text-sm mb-24">Access the analytics dashboard and policy controls.</p>
+    <p class="text-muted text-sm mb-16">Access the analytics dashboard and policy controls.</p>
+
+    <div class="backend-disclaimer">
+      <div class="bd-icon">🚀</div>
+      <div class="bd-content">
+        <strong>System Notice</strong>
+        The backend may take 2-3 attempts to respond if it's currently inactive. Thanks for your patience!
+      </div>
+    </div>
 
     <div class="form-group">
       <label for="adminEmail">Email</label>
@@ -225,6 +241,23 @@
     <p class="secure-note">🔒 Admin access is logged and monitored.</p>
 
     <button onclick="backToRoles()" class="btn btn-secondary btn-sm mt-16" style="width:100%;justify-content:center">← Change role</button>
+  </div>
+
+  <!-- ── Session PIN Setup (shown after admin login) ── -->
+  <div class="admin-panel" id="pinSetupPanel" style="display:none">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:2.5rem;margin-bottom:8px">🔐</div>
+      <p class="panel-title">Set Your Session PIN</p>
+      <p class="text-muted text-sm">This PIN is required to approve any payout. It expires when you log out.</p>
+    </div>
+    <div class="form-group mt-20">
+      <label for="pinInput">Choose a 4–6 digit PIN</label>
+      <input type="password" id="pinInput" placeholder="e.g. 4829" maxlength="6" inputmode="numeric"
+        style="font-size:1.5rem;letter-spacing:.3rem;text-align:center" />
+    </div>
+    <div id="pinError" class="alert alert-danger mb-16" style="display:none"></div>
+    <button class="btn btn-primary btn-full btn-lg" onclick="confirmPin()">Set PIN & Enter Dashboard →</button>
+    <p class="secure-note mt-12">🔒 This PIN is never sent to any server. It lives only in your browser session.</p>
   </div>
 
 </div>
@@ -314,11 +347,33 @@
 
     if (email === 'admin@insuregig.in' && pass === 'admin123') {
       sessionStorage.setItem('gsRole', 'admin');
-      location.href = 'dashboard.html';
+      sessionStorage.setItem('gsAdminEmail', email);
+      // Show PIN setup before redirect
+      showPinSetup();
     } else {
       errEl.textContent = 'Invalid credentials. Try admin@insuregig.in / admin123';
       errEl.style.display = 'flex';
     }
+  }
+
+  function showPinSetup() {
+    document.getElementById('adminPanel').style.display = 'none';
+    document.getElementById('roleGrid').style.display = 'none';
+    document.getElementById('pinSetupPanel').style.display = '';
+  }
+
+  function confirmPin() {
+    const pin = document.getElementById('pinInput').value.trim();
+    const errEl = document.getElementById('pinError');
+    if (!/^\d{4,6}$/.test(pin)) {
+      errEl.textContent = 'PIN must be 4–6 digits.';
+      errEl.style.display = 'flex';
+      return;
+    }
+    // Simple hash: store as reversed+sum for basic obfuscation (not cryptographic)
+    const pinHash = btoa(pin.split('').reverse().join('') + pin.length);
+    sessionStorage.setItem('gsAdminPin', pinHash);
+    location.href = 'dashboard.html';
   }
 
   // Allow Enter key on password fields

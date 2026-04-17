@@ -8,6 +8,36 @@
   <style>
     body { background: #f4f5f7; }
     .navbar-admin-tag { background: var(--accent-bg); color: var(--accent); border-radius: 999px; padding: 3px 10px; font-size: .72rem; font-weight: 700; text-transform: uppercase; margin-left: 10px; }
+
+    /* Dual-axis risk panel */
+    .risk-axis-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:8px; }
+    @media(max-width:600px){ .risk-axis-grid { grid-template-columns:1fr; } }
+    .risk-axis-panel { border:1px solid var(--border); border-radius:12px; padding:16px; background:#fff; }
+    .risk-axis-panel .panel-title { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#6b7280; margin-bottom:12px; display:flex; align-items:center; gap:6px; }
+    .risk-feature-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #f1f5f9; font-size:.82rem; }
+    .risk-feature-row:last-child { border-bottom:none; }
+    .risk-feature-row .rf-label { color:#374151; }
+    .risk-feature-row .rf-value { font-weight:700; color:var(--text); }
+
+    /* Risk matrix */
+    .risk-matrix-wrap { margin-top:20px; }
+    .risk-matrix-label { font-size:.72rem; font-weight:700; text-transform:uppercase; color:#6b7280; margin-bottom:10px; }
+    .risk-matrix-grid { display:grid; grid-template-columns:auto 1fr; gap:10px; align-items:center; }
+    .rm-axis-label { font-size:.68rem; color:#9ca3af; writing-mode:vertical-lr; transform:rotate(180deg); text-align:center; }
+    .rm-cells { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+    .rm-cell { border-radius:8px; padding:8px 6px; text-align:center; font-size:.68rem; font-weight:600; opacity:.35; transition:opacity .2s,transform .2s; border:2px solid transparent; }
+    .rm-cell.active { opacity:1; transform:scale(1.08); border-color:rgba(0,0,0,.15); box-shadow:0 2px 8px rgba(0,0,0,.12); }
+    .rm-cell.ll { background:#f0fdf4;color:#15803d; }
+    .rm-cell.lm { background:#fefce8;color:#92400e; }
+    .rm-cell.lh { background:#fff7ed;color:#c2410c; }
+    .rm-cell.ml { background:#fefce8;color:#92400e; }
+    .rm-cell.mm { background:#fff7ed;color:#c2410c; }
+    .rm-cell.mh { background:#fff1f2;color:#be123c; }
+    .rm-cell.hl { background:#fff7ed;color:#c2410c; }
+    .rm-cell.hm { background:#fff1f2;color:#be123c; }
+    .rm-cell.hh { background:#fef2f2;color:#991b1b; }
+    .rm-x-labels { display:grid; grid-template-columns:auto repeat(3,1fr); gap:6px; margin-bottom:2px; padding-left:0; }
+    .rm-x-label  { text-align:center; font-size:.62rem; color:#9ca3af; font-weight:600; }
   </style>
 </head>
 <body>
@@ -61,6 +91,10 @@
           <div>
             <h2 id="wName" style="font-size:1.5rem;margin-bottom:4px">—</h2>
             <p class="text-sm text-muted" id="wMeta">—</p>
+            <div id="wRiskContainer" class="mt-12 flex-center gap-12" style="display:none">
+               <div id="wRiskBadge"></div>
+               <div id="wRiskReasons" class="text-xs text-muted fw-600"></div>
+            </div>
           </div>
           <div style="text-align:right">
             <p class="text-xs text-muted">UPI ID</p>
@@ -88,16 +122,49 @@
         </div>
       </div>
       
-      <!-- Worker Features/Activity -->
+      <!-- Dual-axis ML Risk Panel -->
       <div class="card-white mt-24">
-        <h3 class="mb-16">ML Features / Risk Factors</h3>
-        <div class="table-wrapper">
-          <table>
-            <thead><tr><th>Factor</th><th>Value</th></tr></thead>
-            <tbody id="workerFeaturesBody">
-              <tr><td colspan="2" class="text-muted text-center" style="padding:16px">Loading...</td></tr>
-            </tbody>
-          </table>
+        <h3 class="mb-4">Risk Intelligence — Dual-Axis Analysis</h3>
+        <p class="text-muted text-sm mb-16">Separates individual behavioral risk from aggregate zone-level environmental risk.</p>
+
+        <div class="risk-axis-grid">
+          <!-- Behavioral Panel -->
+          <div class="risk-axis-panel">
+            <div class="panel-title">🧠 Behavioral Profile <span style="font-style:italic;font-weight:400;text-transform:none;color:#9ca3af">(Individual)</span></div>
+            <div id="behaviorFeaturesBody"><p class="text-muted text-sm">—</p></div>
+          </div>
+          <!-- Zone Panel -->
+          <div class="risk-axis-panel">
+            <div class="panel-title">🗺️ Zone Aggregate Risk <span style="font-style:italic;font-weight:400;text-transform:none;color:#9ca3af">(Environmental)</span></div>
+            <div id="zoneFeaturesBody"><p class="text-muted text-sm">—</p></div>
+          </div>
+        </div>
+
+        <!-- Risk Matrix -->
+        <div class="risk-matrix-wrap">
+          <div class="risk-matrix-label">📊 Risk Matrix — Behavior vs Zone</div>
+          <div class="rm-x-labels">
+            <div></div>
+            <div class="rm-x-label">Low Zone</div>
+            <div class="rm-x-label">Med Zone</div>
+            <div class="rm-x-label">High Zone</div>
+          </div>
+          <div class="risk-matrix-grid">
+            <div class="rm-axis-label">Behavior ▲</div>
+            <div class="rm-cells" id="riskMatrixCells">
+              <!-- Filled by JS: [H-B×L-Z] [H-B×M-Z] [H-B×H-Z] ... -->
+              <div class="rm-cell hh" id="rm-hh">High/High<br>🔴 Critical</div>
+              <div class="rm-cell hm" id="rm-hm">High/Med<br>🟠 Danger</div>
+              <div class="rm-cell hl" id="rm-hl">High/Low<br>🟡 Watch</div>
+              <div class="rm-cell mh" id="rm-mh">Med/High<br>🟠 Concern</div>
+              <div class="rm-cell mm" id="rm-mm">Med/Med<br>🟡 Moderate</div>
+              <div class="rm-cell ml" id="rm-ml">Med/Low<br>🟢 Managed</div>
+              <div class="rm-cell lh" id="rm-lh">Low/High<br>🟡 Zone Risk</div>
+              <div class="rm-cell lm" id="rm-lm">Low/Med<br>🟢 Low Risk</div>
+              <div class="rm-cell ll" id="rm-ll">Low/Low<br>✅ Safe</div>
+            </div>
+          </div>
+          <p class="text-xs text-muted mt-8" style="text-align:center">Rows = Behavior Risk · Columns = Zone Risk</p>
         </div>
       </div>
 
@@ -162,19 +229,93 @@
     }
   }
 
+  // Keywords that classify a feature as behavioral (individual) risk
+  const BEHAVIOR_KEYS = ['claim_freq','claim_frequency','frequency','tenure','velocity','total_claims','claims_count','complaint_count','hourly','daily_avg','avg_daily','baseline','active_hours','weekly'];
+  // Keywords that classify a feature as zone-level (environmental) risk
+  const ZONE_KEYS = ['zone','city','region','weather','rain','wind','temp','aqi','humidity','heat','smog','cyclone','district','geo','area','location'];
+
+  function classifyFeature(key) {
+    const k = key.toLowerCase();
+    if (ZONE_KEYS.some(z => k.includes(z))) return 'zone';
+    if (BEHAVIOR_KEYS.some(b => k.includes(b))) return 'behavior';
+    // Heuristic: numeric features with high variance are behavioral by default
+    return 'behavior';
+  }
+
+  function renderFeatureRows(featureObj) {
+    return Object.entries(featureObj).map(([k, v]) => {
+      const val = isNaN(parseFloat(v)) ? v : parseFloat(v).toFixed(2);
+      return `<div class="risk-feature-row"><span class="rf-label">${featureLabel(k)}</span><span class="rf-value">${val}</span></div>`;
+    }).join('');
+  }
+
+  function activateRiskMatrix(behaviorScore, zoneScore) {
+    const bLevel = behaviorScore > 0.65 ? 'h' : behaviorScore > 0.3 ? 'm' : 'l';
+    const zLevel = zoneScore    > 0.65 ? 'h' : zoneScore    > 0.3 ? 'm' : 'l';
+    const cellId = `rm-${bLevel}${zLevel}`;
+    document.querySelectorAll('.rm-cell').forEach(el => el.classList.remove('active'));
+    const cell = document.getElementById(cellId);
+    if (cell) cell.classList.add('active');
+  }
+
   async function loadFeatures(wId) {
-    const tbody = document.getElementById('workerFeaturesBody');
+    const behaviorEl = document.getElementById('behaviorFeaturesBody');
+    const zoneEl     = document.getElementById('zoneFeaturesBody');
+    const riskContainer = document.getElementById('wRiskContainer');
+    const riskBadge = document.getElementById('wRiskBadge');
+    const riskReasons = document.getElementById('wRiskReasons');
+
+    behaviorEl.innerHTML = '<p class="text-muted text-sm">Loading…</p>';
+    zoneEl.innerHTML     = '<p class="text-muted text-sm">Loading…</p>';
+
     try {
       const ml = await apiGet(`/api/v1/ml/predict/${wId}`);
+
+      // Overall risk header
+      const score   = ml.fraudScore || ml.fraud_score || 0;
+      const reasons = ml.riskReasons || ml.risk_reasons || [];
+      const riskLevel = score > 0.7 ? 'HIGH' : score > 0.3 ? 'MEDIUM' : 'LOW';
+      riskBadge.innerHTML = statusBadge(riskLevel);
+      riskReasons.textContent = reasons.length > 0 ? `Reason: ${reasons.join(', ')}` : 'Safe patterns detected';
+      riskContainer.style.display = 'flex';
+
+      // Split features
       const features = ml.features || ml.input_features || {};
-      const keys = Object.keys(features);
-      if (keys.length === 0) {
-         tbody.innerHTML = '<tr><td colspan="2" class="text-muted text-center">No features available</td></tr>';
-         return;
+      const behaviorFeatures = {}, zoneFeatures = {};
+      Object.entries(features).forEach(([k, v]) => {
+        if (classifyFeature(k) === 'zone') zoneFeatures[k] = v;
+        else behaviorFeatures[k] = v;
+      });
+
+      // Derive zone risk score from avg of zone features (0-1 normalized)
+      const zoneVals = Object.values(zoneFeatures).map(v => parseFloat(v) || 0);
+      const zoneScore = zoneVals.length > 0
+        ? Math.min(1, zoneVals.reduce((s,v) => s+v, 0) / (zoneVals.length * 100))
+        : score * 0.4;
+
+      const behaviorScore = score; // fraud score is primarily behavioral
+
+      // Render panels
+      if (Object.keys(behaviorFeatures).length > 0) {
+        behaviorEl.innerHTML = renderFeatureRows(behaviorFeatures);
+      } else {
+        behaviorEl.innerHTML = '<p class="text-muted text-sm">No individual behavior features returned.</p>';
       }
-      tbody.innerHTML = keys.map(k => `<tr><td>${featureLabel(k)}</td><td class="fw-600">${parseFloat(features[k]).toFixed(2)}</td></tr>`).join('');
+
+      if (Object.keys(zoneFeatures).length > 0) {
+        zoneEl.innerHTML = renderFeatureRows(zoneFeatures);
+      } else {
+        // Use city/zone from worker profile as fallback label
+        zoneEl.innerHTML = `<p class="text-muted text-sm">Zone features not isolated by ML API.<br>Overall fraud signal: <strong>${(score * 100).toFixed(0)}%</strong></p>`;
+      }
+
+      // Light up risk matrix
+      activateRiskMatrix(behaviorScore, zoneScore);
+
     } catch (_) {
-      tbody.innerHTML = '<tr><td colspan="2" class="text-muted text-center">No features available</td></tr>';
+      behaviorEl.innerHTML = '<p class="text-muted text-sm">Could not load features.</p>';
+      zoneEl.innerHTML     = '<p class="text-muted text-sm">Could not load features.</p>';
+      riskContainer.style.display = 'none';
     }
   }
 
@@ -202,7 +343,10 @@
               <div class="text-muted text-xs">${fmtTime(ts)}</div>
             </td>
             <td>${(c.category || '').replace(/_/g, ' ')}</td>
-            <td class="text-sm">${c.description || '—'}</td>
+            <td class="text-sm">
+              <div class="fw-600">${(c.description || '').split(' | Delivering: ')[0] || '—'}</div>
+              <div class="text-xs text-muted">Delivering: ${(c.description || '').split(' | Delivering: ')[1] || '—'}</div>
+            </td>
             <td>${statusBadge(rawStatus)}</td>
           </tr>
         `;

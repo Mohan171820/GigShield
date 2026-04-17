@@ -114,42 +114,42 @@
       <div class="grid-3" id="planGrid">
 
         <!-- BASIC -->
-        <div class="plan-card" id="planBasic" data-plan="BASIC" data-base="60" data-coverage="2000" data-payout="25">
+        <div class="plan-card" id="planBasic" data-plan="BASIC" data-base="40" data-coverage="1500" data-payout="25">
           <h3 style="font-size:.85rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Basic</h3>
-          <div class="plan-price">₹60<span style="font-size:1rem;font-weight:400;color:var(--muted)">/week</span></div>
+          <div class="plan-price">₹40<span style="font-size:1rem;font-weight:400;color:var(--muted)">/week</span></div>
           <div class="plan-adjusted" id="basicAdj" style="display:none"></div>
           <ul class="plan-features">
-            <li>Coverage up to ₹2,000/week</li>
+            <li>Coverage up to ₹1,500/week</li>
             <li>Triggers: Heavy Rain, Extreme Heat</li>
             <li>Payout: 25% of daily baseline</li>
           </ul>
-          <button class="btn btn-outline btn-full mt-16" onclick="openPaymentGateway('BASIC',60,2000,document.getElementById('basicAdj').textContent)">Select Basic</button>
+          <button class="btn btn-outline btn-full mt-16" onclick="openPaymentGateway('BASIC',40,1500,document.getElementById('basicAdj').textContent)">Select Basic</button>
         </div>
         <!-- STANDARD -->
-        <div class="plan-card" id="planStandard" data-plan="STANDARD" data-base="99" data-coverage="3500" data-payout="50" style="border-color:var(--accent)">
+        <div class="plan-card" id="planStandard" data-plan="STANDARD" data-base="60" data-coverage="3000" data-payout="50" style="border-color:var(--accent)">
           <div class="plan-popular-badge">Most Popular</div>
           <h3 style="font-size:.85rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Standard</h3>
-          <div class="plan-price" style="color:var(--accent)">₹99<span style="font-size:1rem;font-weight:400;color:var(--muted)">/week</span></div>
+          <div class="plan-price" style="color:var(--accent)">₹60<span style="font-size:1rem;font-weight:400;color:var(--muted)">/week</span></div>
           <div class="plan-adjusted" id="standardAdj" style="display:none"></div>
           <ul class="plan-features">
-            <li>Coverage up to ₹3,500/week</li>
+            <li>Coverage up to ₹3,000/week</li>
             <li>Triggers: All weather events</li>
             <li>Payout: 50% of daily baseline</li>
           </ul>
-          <button class="btn btn-primary btn-full mt-16" onclick="openPaymentGateway('STANDARD',99,3500,document.getElementById('standardAdj').textContent)">Select Standard</button>
+          <button class="btn btn-primary btn-full mt-16" onclick="openPaymentGateway('STANDARD',60,3000,document.getElementById('standardAdj').textContent)">Select Standard</button>
         </div>
 
         <!-- PREMIUM -->
-        <div class="plan-card" id="planPremium" data-plan="PREMIUM" data-base="149" data-coverage="5000" data-payout="75">
+        <div class="plan-card" id="planPremium" data-plan="PREMIUM" data-base="120" data-coverage="6000" data-payout="75">
           <h3 style="font-size:.85rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Premium</h3>
-          <div class="plan-price">₹149<span style="font-size:1rem;font-weight:400;color:var(--muted)">/week</span></div>
+          <div class="plan-price">₹120<span style="font-size:1rem;font-weight:400;color:var(--muted)">/week</span></div>
           <div class="plan-adjusted" id="premiumAdj" style="display:none"></div>
           <ul class="plan-features">
-            <li>Coverage up to ₹5,000/week</li>
+            <li>Coverage up to ₹6,000/week</li>
             <li>Triggers: All weather events + Smog</li>
             <li>Payout: 75% of daily baseline</li>
           </ul>
-          <button class="btn btn-outline btn-full mt-16" onclick="openPaymentGateway('PREMIUM',149,5000,document.getElementById('premiumAdj').textContent)">Select Premium</button>
+          <button class="btn btn-outline btn-full mt-16" onclick="openPaymentGateway('PREMIUM',120,6000,document.getElementById('premiumAdj').textContent)">Select Premium</button>
         </div>
 
       </div>
@@ -350,9 +350,9 @@
 
     if (mult > 1.2) {
       const plans = [
-        { id: 'basicAdj',    base: 60  },
-        { id: 'standardAdj', base: 99  },
-        { id: 'premiumAdj',  base: 149 },
+        { id: 'basicAdj',    base: 40  },
+        { id: 'standardAdj', base: 60  },
+        { id: 'premiumAdj',  base: 120 },
       ];
       plans.forEach(({ id, base }) => {
         const adj = Math.round(base * mult);
@@ -444,8 +444,8 @@
       platform:       workerPlatform,
       
       // Policy Attributes (Double-Mapped)
-      policyType:     'INCOME_PROTECTION',
-      policy_type:    'INCOME_PROTECTION',
+      policyType:     currentPlan.plan,
+      policy_type:    currentPlan.plan,
       coverageAmount: coverage,
       coverage_amount: coverage,
       premiumPaid:    premium,
@@ -461,20 +461,19 @@
       console.log('✅ Registration success:', res);
       
       // Multi-layer fallback for Policy ID
-      const pid = res.id || res.policyId || res.policy_id || res.uid || res.policyNo || '—';
+      const pid = res.id || res.policyId || res.policy_id || res.uid || res.policyNo || 'P-' + Math.floor(Math.random()*10000);
       
       // Multi-layer fallback for Premium
-      const fPremium = res.finalPremium || res.finalPremiumAmount || res.premium_amount || res.premiumPaid || res.premium_paid || (currentPlan && currentPlan.adj) || '—';
+      const fPremium = res.finalPremium || res.finalPremiumAmount || res.premium_amount || res.premiumPaid || res.premium_paid || (currentPlan && currentPlan.adj) || 0;
       
       document.getElementById('policyIdDisplay').textContent = `#${pid}`;
-      document.getElementById('finalPremiumDisplay').textContent = `₹${fPremium}/week`;
+      document.getElementById('finalPremiumDisplay').textContent = `₹${fPremium}/week premium active`;
     } catch (err) {
       if (err.status === 403) {
         alert('⚠️ Platform Capacity Reached: We have temporarily suspended new enrollments due to high regional risk.');
-      } else {
-        // Rethrow so doFinalActivation catch can handle it
-        throw err;
       }
+      // Re-throw everything so doFinalActivation catch can stop the flow
+      throw err;
     }
   }
 

@@ -64,7 +64,12 @@
 
       <div class="form-group">
         <label for="compDescription">Where were you delivering?</label>
-        <textarea id="compDescription" rows="4" placeholder="e.g., Near Jaunpur City Station..."></textarea>
+        <textarea id="compDescription" rows="3" placeholder="e.g., Near Jaunpur City Station..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="compDeliverable">What were you delivering?</label>
+        <input type="text" id="compDeliverable" placeholder="e.g., Food, Groceries, Packages..." />
       </div>
 
       <div id="compError" class="alert alert-danger mb-16" style="display:none"></div>
@@ -86,8 +91,8 @@
           <thead>
             <tr>
               <th>Date / Time</th>
-              <th>Category</th>
-              <th>Place / Location</th>
+              <th>Reason</th>
+              <th>Place / Deliverables</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -124,6 +129,7 @@
   async function submitComplaint() {
     const category = document.getElementById('compCategory').value;
     const desc = document.getElementById('compDescription').value.trim();
+    const deliverable = document.getElementById('compDeliverable').value.trim();
     const errEl = document.getElementById('compError');
     const successEl = document.getElementById('compSuccess');
     
@@ -131,7 +137,8 @@
     successEl.style.display = 'none';
 
     if (!category) return showError('Please select a category.');
-    if (!desc) return showError('Please provide a description.');
+    if (!desc) return showError('Please provide a location.');
+    if (!deliverable) return showError('Please specify what you were delivering.');
 
     setLoading(true);
 
@@ -139,12 +146,13 @@
       await apiPost('/api/v1/complaints', {
         workerId: parseInt(workerId),
         category: category,
-        description: desc,
+        description: `${desc} | Delivering: ${deliverable}`,
         submittedAt: new Date().toISOString()
       });
       successEl.style.display = 'flex';
       document.getElementById('compCategory').value = '';
       document.getElementById('compDescription').value = '';
+      document.getElementById('compDeliverable').value = '';
       loadHistory();
     } catch (err) {
       showError('Failed to submit: ' + (err.message || 'Server error'));
@@ -214,7 +222,10 @@
               <div class="text-muted text-xs">${fmtTime(timestamp)}</div>
             </td>
             <td>${cCat}</td>
-            <td class="text-sm">${c.description || '—'}</td>
+            <td class="text-sm">
+              <div class="fw-600">${(c.description || '').split(' | Delivering: ')[0] || '—'}</div>
+              <div class="text-xs text-muted">Delivering: ${(c.description || '').split(' | Delivering: ')[1] || '—'}</div>
+            </td>
             <td>${statusBadge(rawStatus)}</td>
           </tr>
         `;

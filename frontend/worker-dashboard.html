@@ -343,13 +343,18 @@
     const card = document.getElementById('policyCard');
     try {
       const policies = await apiGet(`/api/v1/policies/worker/${wId}`);
-      const active = (Array.isArray(policies) ? policies : [policies]).find(p =>
-        (p.status || '').toUpperCase() === 'ACTIVE' || p.id
-      );
-      if (active) {
-        const type      = (active.policyType || active.policy_type || 'Standard').replace(/_/g,' ');
-        const coverage  = active.coverageAmount || active.coverage_amount || 3500;
-        const premium   = active.premiumPaid    || active.premium_paid    || 99;
+      const pArr = Array.isArray(policies) ? policies : [policies];
+      const sortedPolicies = [...pArr].sort((a, b) => new Date(b.createdAt || b.created_at || 0) - new Date(a.createdAt || a.created_at || 0));
+      const active = sortedPolicies.find(p => (p.status || '').toUpperCase() === 'ACTIVE') || sortedPolicies[0];
+      
+      if (active && active.id) {
+        const planKey    = (active.policyType || active.policy_type || 'STANDARD').toUpperCase();
+        const coverage  = active.coverageAmount || active.coverage_amount || (planKey === 'PREMIUM' ? 6000 : planKey === 'STANDARD' ? 3000 : 1500);
+        
+        // Force new pricing structure for all display (Migration)
+        const PREM_MAP = { BASIC: 40, STANDARD: 60, PREMIUM: 120 };
+        const premium   = PREM_MAP[planKey] || 60;
+        
         const riskScore = active.riskScore      || active.risk_score      || '1.0';
 
         card.innerHTML = `
@@ -361,7 +366,7 @@
             <div class="grid-2" style="gap:12px;margin-bottom:16px;">
               <div>
                 <p class="text-xs text-muted mb-4">Plan</p>
-                <p class="fw-600">${type} — ₹${premium}/week</p>
+                <p class="fw-600">${planKey.charAt(0) + planKey.slice(1).toLowerCase()} — ₹${premium}/week</p>
               </div>
               <div>
                 <p class="text-xs text-muted mb-4">Risk Score</p>
@@ -369,7 +374,14 @@
               </div>
             </div>
             <p class="text-xs text-muted mb-4">Coverage</p>
-            <p class="fw-600 mb-16">Up to ₹${coverage.toLocaleString('en-IN')}</p>
+            <div class="flex-between mb-4">
+              <p class="fw-600">Up to ₹${coverage.toLocaleString('en-IN')}</p>
+              <p class="text-xs text-muted" id="usedCoverageText">Calculating used...</p>
+            </div>
+            <div class="rs-bar-track mb-16" style="height:8px">
+              <div id="coverageBar" class="rs-bar-fill" style="width:0%; background:var(--accent)"></div>
+            </div>
+
             <p class="text-xs text-muted mb-8">What's covered</p>
             <div>
               <span class="coverage-pill">🌧️ Heavy Rain</span>
@@ -381,6 +393,9 @@
               <a href="policy.html?workerId=${wId}" class="btn btn-outline btn-sm">Change Plan</a>
             </div>
           </div>`;
+        
+        // Update coverage usage
+        updateCoverageUsage(wId, coverage);
       } else {
         renderNoPolicyCard(wId);
       }
@@ -475,6 +490,27 @@
           <div class="ei">☀️</div>
           <p>No payouts yet — clear weather so far!</p>
         </div></td></tr>`;
+    }
+  }
+
+  async function updateCoverageUsage(wId, maxCoverage) {
+    try {
+      const history = await apiGet(`/api/v1/payouts/history/${wId}`);
+      const used = (history || [])
+        .filter(p => (p.status || '').toUpperCase() === 'PAID')
+        .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+      
+      const pct = Math.min(Math.round((used / maxCoverage) * 100), 100);
+      document.getElementById('usedCoverageText').textContent = `₹${used.toLocaleString('en-IN')} used`;
+      document.getElementById('coverageBar').style.width = `${pct}%`;
+      
+      if (pct > 90) {
+        document.getElementById('coverageBar').style.background = 'var(--danger)';
+      } else if (pct > 70) {
+        document.getElementById('coverageBar').style.background = 'var(--warning)';
+      }
+    } catch (_) {
+      document.getElementById('usedCoverageText').textContent = '—';
     }
   }
 
