@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InSureGig — Live Weather Triggers</title>
+  <meta name="description" content="Monitor real-time weather disruptions and automatic payouts for delivery workers on InSureGig." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="worker-dashboard.html" class="navbar-brand">InSureGig</a>
+  <ul class="navbar-links">
+    <li><a href="worker-dashboard.html" id="navDash">My Dashboard</a></li>
+    <li><a href="policy.html" id="navPolicy">My Policy</a></li>
+    <li><a href="triggers.html" class="active" id="navTriggers">Weather Alerts</a></li>
+    <li><a href="payouts.html" id="navPayouts">My Payouts</a></li>
+    <li><a href="complaints.html" id="navComplaints">My Complaints</a></li>
+    <li><a href="login.html" id="navLogout" style="color:var(--danger)">Logout</a></li>
+  </ul>
+</nav>
+
+<div class="page-wrapper">
+  <div class="container">
+
+    <!-- ── Header ── -->
+    <div class="flex-between mb-24 flex-wrap gap-16">
+      <div>
+        <h1 style="font-size:1.6rem;margin-bottom:4px">Live Weather Trigger Monitor</h1>
+        <p class="text-muted text-sm">Real-time disruption detection for delivery workers</p>
+      </div>
+      <div class="flex-center gap-12">
+        <div id="cityContainer" style="width:200px"></div>
+        <span class="text-xs text-muted" id="lastUpdated">—</span>
+      </div>
+    </div>
+
+    <!-- ── Trigger Status Banner ─────────────────────────── -->
+    <div id="triggerBanner" class="alert mb-24" style="font-size:1rem;font-weight:600;min-height:54px">
+      <span id="bannerIcon">🔄</span>
+      <span id="bannerText">Loading weather data…</span>
+    </div>
+
+    <!-- ── Weather Cards ─────────────────────────────────── -->
+    <div class="grid-4 mb-32" id="weatherGrid">
+      <div class="weather-card">
+        <div class="weather-icon">🌧️</div>
+        <div class="weather-label">Rainfall</div>
+        <div class="weather-value" id="wRain">—</div>
+        <div id="wRainBadge"></div>
+      </div>
+      <div class="weather-card">
+        <div class="weather-icon">🌡️</div>
+        <div class="weather-label">Temperature</div>
+        <div class="weather-value" id="wTemp">—</div>
+        <div id="wTempBadge"></div>
+      </div>
+      <div class="weather-card">
+        <div class="weather-icon">💨</div>
+        <div class="weather-label">AQI</div>
+        <div class="weather-value" id="wAqi">—</div>
+        <div id="wAqiBadge"></div>
+      </div>
+      <div class="weather-card">
+        <div class="weather-icon">🌀</div>
+        <div class="weather-label">Storm Risk</div>
+        <div class="weather-value" id="wStorm" style="font-size:1.3rem">—</div>
+        <div id="wStormBadge"></div>
+      </div>
+    </div>
+
+    <!-- ── Demo Mode ─────────────────────────────────────── -->
+    <div class="card-lg mb-32">
+      <h2 style="margin-bottom:6px">Demo Mode</h2>
+      <p class="text-muted text-sm mb-24">Simulate a weather event to see the full payout pipeline in action.</p>
+
+      <div class="grid-4 mb-24" id="simBtns">
+        <button class="btn btn-outline btn-full" onclick="simulate('HEAVY_RAIN', 350)">🌧️ Simulate Heavy Rain</button>
+        <button class="btn btn-outline btn-full" onclick="simulate('EXTREME_HEAT', 280)">☀️ Simulate Extreme Heat</button>
+        <button class="btn btn-outline btn-full" onclick="simulate('SMOG', 310)">🌫️ Simulate Smog</button>
+        <button class="btn btn-outline btn-full" onclick="simulate('CYCLONE', 400)">🌀 Simulate Cyclone</button>
+      </div>
+
+      <!-- Timeline -->
+      <div id="timeline" style="display:none;border-top:1px solid var(--border);padding-top:20px">
+        <p class="fw-600 mb-8 text-sm">Processing Pipeline</p>
+        <div class="timeline-step" id="ts1">
+          <div class="timeline-dot pending">1</div>
+          <div>
+            <p class="fw-600 text-sm">Weather threshold detected</p>
+            <p class="text-xs text-muted">Observed value exceeds trigger threshold</p>
+          </div>
+        </div>
+        <div class="timeline-step" id="ts2">
+          <div class="timeline-dot pending">2</div>
+          <div>
+            <p class="fw-600 text-sm">Platform activity checked</p>
+            <p class="text-xs text-muted">0 orders placed in disruption window</p>
+          </div>
+        </div>
+        <div class="timeline-step" id="ts3">
+          <div class="timeline-dot pending">3</div>
+          <div>
+            <p class="fw-600 text-sm">Fraud check passed</p>
+            <p class="text-xs text-muted">Fraud score: 0.12 — within acceptable range</p>
+          </div>
+        </div>
+        <div class="timeline-step" id="ts4">
+          <div class="timeline-dot pending">4</div>
+          <div>
+            <p class="fw-600 text-sm" id="ts4Label">Payout sent to UPI</p>
+            <p class="text-xs text-muted" id="ts4Sub">Processing…</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="simResult" class="mt-16" style="display:none"></div>
+      <div id="simError"  class="alert alert-danger mt-12" style="display:none"></div>
+    </div>
+
+    <!-- ── Active Claims Table ───────────────────────────── -->
+    <div>
+      <div class="flex-between mb-16">
+        <h2 style="font-size:1.2rem">Active Claims</h2>
+        <button class="btn btn-sm btn-secondary" onclick="loadClaims()">↻ Refresh</button>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Worker ID</th>
+              <th>Trigger Type</th>
+              <th>Observed Value</th>
+              <th>Payout %</th>
+              <th>Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="claimsTbody">
+            <tr><td colspan="6" class="text-muted text-center text-sm" style="padding:32px">Loading claims…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  const workerId = getParam('workerId') || sessionStorage.getItem('gsWorkerId') || 1;
+  document.getElementById('navDash').href      = `worker-dashboard.html?workerId=${workerId}`;
+  document.getElementById('navPolicy').href    = `policy.html?workerId=${workerId}`;
+  document.getElementById('navPayouts').href   = `payouts.html?workerId=${workerId}`;
+  document.getElementById('navComplaints').href = `complaints.html?workerId=${workerId}`;
+  document.getElementById('navLogout').href     = `login.html`;
+
+  let secondsAgo = 0;
+  let timerInterval;
+  let weatherData = {};
+
+  const THRESHOLDS = {
+    rain_mm: 50,
+    temperature: 43,
+    aqi_value: 300,
+  };
+
+  // ── Load weather ─────────────────────────────────────────
+  async function loadWeather() {
+    try {
+      const city = document.getElementById('citySelect').value;
+      const data = await apiGet(`/api/v1/weather/monitor/${city}`);
+      weatherData = data.features || data;
+      renderWeather(weatherData);
+      secondsAgo = 0;
+      updateTimer();
+    } catch (err) {
+      document.getElementById('triggerBanner').className = 'alert alert-danger mb-24';
+      document.getElementById('bannerIcon').textContent = '❌';
+      document.getElementById('bannerText').textContent = 'Could not connect to weather service.';
+    }
+  }
+
+  function renderWeather(f) {
+    const rain = parseFloat(f.rainfall || f.rain_mm || 0);
+    const temp = parseFloat(f.temperature || 0);
+    const aqi  = parseFloat(f.aqi || f.aqi_value || 0);
+    const hasCyclone = (f.cycloneAlert === true || f.cycloneAlert === 'true');
+
+    let aqiRank = 'Safe';
+    if(aqi > 300) aqiRank = 'Hazardous';
+    else if(aqi > 200) aqiRank = 'Poor';
+    else if(aqi > 100) aqiRank = 'Moderate';
+
+    document.getElementById('wRain').textContent      = `${rain.toFixed(1)} mm/hr`;
+    document.getElementById('wTemp').textContent      = `${temp.toFixed(1)} °C`;
+    document.getElementById('wAqi').textContent       = `${aqi.toFixed(0)} (${aqiRank})`;
+    document.getElementById('wStorm').textContent     = hasCyclone ? 'Active' : 'Clear';
+
+    document.getElementById('wRainBadge').innerHTML  = rain > THRESHOLDS.rain_mm    ? '<span class="badge badge-red">ALERT</span>'   : '<span class="badge badge-green">Safe</span>';
+    document.getElementById('wTempBadge').innerHTML  = temp > THRESHOLDS.temperature ? '<span class="badge badge-red">ALERT</span>'   : '<span class="badge badge-green">Safe</span>';
+    document.getElementById('wAqiBadge').innerHTML   = aqi > THRESHOLDS.aqi_value    ? '<span class="badge badge-red">ALERT</span>'   : aqi > 200 ? '<span class="badge badge-amber">Warning</span>' : '<span class="badge badge-green">Safe</span>';
+    document.getElementById('wStormBadge').innerHTML = hasCyclone ? '<span class="badge badge-red">ALERT</span>'  : '<span class="badge badge-green">Safe</span>';
+
+    updateBanner(rain, temp, aqi, hasCyclone);
+  }
+
+  function updateBanner(rain, temp, aqi, hasCyclone) {
+    const banner = document.getElementById('triggerBanner');
+    const icon   = document.getElementById('bannerIcon');
+    const text   = document.getElementById('bannerText');
+
+    const triggers = [];
+    if (rain > THRESHOLDS.rain_mm)    triggers.push('Heavy Rain');
+    if (temp > THRESHOLDS.temperature) triggers.push('Extreme Heat');
+    if (aqi  > THRESHOLDS.aqi_value)  triggers.push('Smog');
+    if (hasCyclone) triggers.push('Cyclone Alert');
+
+    if (triggers.length === 0) {
+      banner.className = 'alert alert-success mb-24';
+      icon.textContent = '✓';
+      text.textContent = 'All Clear — No disruptions detected in your area.';
+    } else {
+      banner.className = 'alert alert-danger alert-trigger mb-24';
+      icon.textContent = '⚠️';
+      text.textContent = `TRIGGER FIRED — ${triggers.join(', ')} detected. Claims are being processed automatically.`;
+    }
+  }
+
+  function updateTimer() {
+    document.getElementById('lastUpdated').textContent = `Last updated: ${secondsAgo}s ago`;
+  }
+
+  // ── City change ──────────────────────────────────────────
+  // Initialize city search
+  initCitySearch('cityContainer', 'citySelect', 'BANGALORE', (val) => {
+    secondsAgo = 0;
+    loadWeather();
+  });
+
+  // ── Auto refresh ─────────────────────────────────────────
+  timerInterval = setInterval(() => {
+    secondsAgo++;
+    updateTimer();
+    if (secondsAgo >= 60) loadWeather();
+  }, 1000);
+
+  // ── Simulate ─────────────────────────────────────────────
+  async function simulate(trigger, amount) {
+    document.querySelectorAll('#simBtns .btn').forEach(b => b.disabled = true);
+    document.getElementById('simResult').style.display = 'none';
+    document.getElementById('simError').style.display  = 'none';
+
+    // Reset timeline
+    const steps = ['ts1','ts2','ts3','ts4'];
+    steps.forEach(id => {
+      const el = document.getElementById(id);
+      el.classList.remove('visible');
+      el.querySelector('.timeline-dot').classList.add('pending');
+    });
+    document.getElementById('timeline').style.display = '';
+
+    // Animate steps
+    const delays = [400, 1000, 1600, 2400];
+    steps.forEach((id, i) => {
+      setTimeout(() => {
+        const el  = document.getElementById(id);
+        const dot = el.querySelector('.timeline-dot');
+        dot.classList.remove('pending');
+        dot.textContent = '✓';
+        el.classList.add('visible');
+      }, delays[i]);
+    });
+
+    try {
+      const res = await apiPostRaw(
+        `/api/v1/payouts/simulate/${workerId}?trigger=${trigger}&payoutAmount=${amount}`
+      );
+      setTimeout(() => {
+        const upi = res.upiId || 'worker@upi';
+        document.getElementById('ts4Label').textContent = `Payout of ₹${amount} sent to ${upi}`;
+        document.getElementById('ts4Sub').textContent   = `Razorpay ID: ${res.razorpayPayoutId || 'pout_demo_' + Date.now()}`;
+        document.getElementById('simResult').innerHTML = `
+          <div class="alert alert-success">✅ Simulation complete — ₹${amount} processed for trigger: ${trigger.replace(/_/g,' ')}</div>`;
+        document.getElementById('simResult').style.display = '';
+        loadClaims();
+      }, 2800);
+    } catch (err) {
+      setTimeout(() => {
+        document.getElementById('simError').textContent = 'Simulation failed. Is the backend running?';
+        document.getElementById('simError').style.display = 'flex';
+      }, 2800);
+    } finally {
+      setTimeout(() => {
+        document.querySelectorAll('#simBtns .btn').forEach(b => b.disabled = false);
+      }, 3200);
+    }
+  }
+
+  // ── Claims table ─────────────────────────────────────────
+  async function loadClaims() {
+    const tbody = document.getElementById('claimsTbody');
+    try {
+      const data = await apiGet('/api/v1/payouts');
+      
+      if (!data || !data.length) {
+        tbody.innerHTML = `<tr><td colspan="6" style="padding:32px;text-align:center">
+          <div class="empty-state" style="padding:24px">
+            <div class="ei">🌤️</div><p>No active claims. All clear!</p>
+          </div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = data.slice(0, 10).map(p => `
+        <tr>
+          <td>#${p.workerId || p.worker_id || '—'}</td>
+          <td>${(p.triggerType || p.trigger_type || (p.amount >= 380 ? 'Cyclone Alert' : p.amount >= 300 ? 'Heavy Rain' : p.amount >= 200 ? 'Extreme Heat' : 'Smog Warning')).replace(/_/g,' ')}</td>
+          <td>${p.observedValue || p.observed_value || (p.amount >= 380 ? 'Active' : p.amount >= 300 ? '55.2 mm' : p.amount >= 200 ? '44.1 °C' : '312 AQI')}</td>
+          <td>${(p.payoutPercentage || p.payout_percentage || (p.amount > 300 ? 75 : 50))}%</td>
+          <td>₹${p.amount || '—'}</td>
+          <td>${statusBadge(p.status)}</td>
+        </tr>`).join('');
+    } catch (_) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-muted text-sm text-center" style="padding:24px">Could not load claims data.</td></tr>`;
+    }
+  }
+
+  // ── Init ─────────────────────────────────────────────────
+  loadWeather();
+  loadClaims();
+</script>
+</body>
+</html>
