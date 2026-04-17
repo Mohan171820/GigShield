@@ -45,7 +45,6 @@ public class MLDataService {
         }
 
         // 3. Device-Level Logic (Mocking GPS Spoofing Detection)
-        // If the worker's name implies testing or spoofing, flag them. Or 5% random chance for demo.
         boolean spoofed = worker.getName().toLowerCase().contains("spoof") || Math.random() < 0.05;
 
         return FeatureRequestDTO.builder()
@@ -60,6 +59,11 @@ public class MLDataService {
                 .zone_max_temp(maxZoneTemp)
                 .zone_avg_aqi(avgZoneAqi)
                 .gps_spoofed(spoofed)
+                .observed_count_30d(worker.getOrdersThisMonth() != null ? worker.getOrdersThisMonth() : 0)
+                .tenure_weeks(worker.getTenureWeeks())
+                .avg_earnings(worker.getAvgDailyEarnings())
+                .city(worker.getCity())
+                .zone(worker.getZone())
                 .build();
     }
 }

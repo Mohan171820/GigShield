@@ -48,13 +48,42 @@ public class PayoutService {
         log.info("[PAYOUT] Initiating payout for Claim ID={} | Worker={} | UPI={} | Amount=₹{}",
                 claim.getId(), worker.getName(), worker.getUpiId(), claim.getPayoutAmount());
 
-        // --- Coverage Cap Logic ---
+        // --- Worker Lifetime Coverage Cap Logic ---
+        double workerLimit = worker.getCoverageAmount() != null ? worker.getCoverageAmount() : 3000.0;
+        BigDecimal totalWorkerHistory = claimRepository.findAll().stream()
+                .filter(c -> c.getWorker() != null && worker.getId().equals(c.getWorker().getId()))
+                .filter(c -> c.getStatus() == Claim.ClaimStatus.PAID)
+                .map(Claim::getPayoutAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (totalWorkerHistory.add(claim.getPayoutAmount()).doubleValue() > workerLimit) {
+            log.warn("[PAYOUT-BLOCKED] Lifetime Coverage Cap Exceeded for WorkerID={}. Limit: ₹{}, Already Paid: ₹{}, Current: ₹{}",
+                    worker.getId(), workerLimit, totalWorkerHistory, claim.getPayoutAmount());
+            
+            claim.setStatus(Claim.ClaimStatus.REJECTED);
+            claimRepository.save(claim);
+            
+            return PayoutResultDTO.builder()
+                    .claimId(claim.getId())
+                    .workerId(worker.getId())
+                    .workerName(worker.getName())
+                    .upiId(worker.getUpiId())
+                    .amountPaid(BigDecimal.ZERO)
+                    .currency("INR")
+                    .status(PayoutResultDTO.PayoutStatus.FAILED)
+                    .statusDescription("Lifetime Coverage Limit Exceeded (₹" + workerLimit + ").")
+                    .initiatedAt(initiatedAt)
+                    .completedAt(LocalDateTime.now())
+                    .build();
+        }
+
+        // --- Weekly Policy Cap Logic (Existing) ---
         if (claim.getPolicy() != null) {
             BigDecimal totalPaid = claimRepository.sumPaidPayoutsByPolicyId(claim.getPolicy().getId());
             BigDecimal maxAllowed = claim.getPolicy().getMaxWeeklyPayout();
             
             if (totalPaid.add(claim.getPayoutAmount()).compareTo(maxAllowed) > 0) {
-                log.warn("[PAYOUT-BLOCKED] Coverage Cap Exceeded for PolicyID={}. Max Allowed: ₹{}, Total Already Paid: ₹{}, Current Claim: ₹{}", 
+                log.warn("[PAYOUT-BLOCKED] Weekly Coverage Cap Exceeded for PolicyID={}. Max Allowed: ₹{}, Total Already Paid: ₹{}, Current Claim: ₹{}", 
                         claim.getPolicy().getId(), maxAllowed, totalPaid, claim.getPayoutAmount());
                 
                 claim.setStatus(Claim.ClaimStatus.REJECTED);
@@ -68,7 +97,7 @@ public class PayoutService {
                         .amountPaid(BigDecimal.ZERO)
                         .currency("INR")
                         .status(PayoutResultDTO.PayoutStatus.FAILED)
-                        .statusDescription("Coverage Cap Exceeded. Max weekly payout limit reached.")
+                        .statusDescription("Weekly Coverage Cap Exceeded. Max weekly payout limit reached.")
                         .initiatedAt(initiatedAt)
                         .completedAt(LocalDateTime.now())
                         .build();
@@ -121,9 +150,5 @@ public class PayoutService {
         log.warn("[RAZORPAY-LIVE] Live payouts are temporarily disabled in MVP. Falling back to Sandbox mode.");
         return processSandboxPayout(claim, worker, initiatedAt);
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Helper: Create a Razorpay Contact
-    // ─────────────────────────────────────────────────────────────────────────
 
 }

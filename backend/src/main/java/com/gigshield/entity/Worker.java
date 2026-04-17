@@ -52,6 +52,15 @@ public class Worker {
     @Column(nullable = true) // Temporarily true to allow column creation
     private String password;
 
+    @Column(nullable = false)
+    private String plan = "STANDARD";
+
+    @Column(nullable = false)
+    private String planType = "STANDARD";
+
+    @Column(nullable = false)
+    private Double coverageAmount = 3000.0;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -67,6 +76,13 @@ public class Worker {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         if (tenureWeeks == null) tenureWeeks = 0;
+        if (plan == null) plan = "STANDARD";
+        if (planType == null) planType = "STANDARD";
+        if (coverageAmount == null) {
+            if ("BASIC".equals(plan)) coverageAmount = 1500.0;
+            else if ("PREMIUM".equals(plan)) coverageAmount = 6000.0;
+            else coverageAmount = 3000.0;
+        }
     }
 
     public Long getId() { return id; }
@@ -94,6 +110,14 @@ public class Worker {
     public Double getWeeklyActiveHours() { return weeklyActiveHours; }
     public Integer getOrdersThisMonth() { return ordersThisMonth; }
     public Double getAvgDailyEarnings() { return avgDailyEarnings; }
+
+    public String getPlan() { return plan; }
+    public String getPlanType() { return planType; }
+    public Double getCoverageAmount() { return coverageAmount; }
+
+    public void setPlan(String plan) { this.plan = plan; }
+    public void setPlanType(String planType) { this.planType = planType; }
+    public void setCoverageAmount(Double coverageAmount) { this.coverageAmount = coverageAmount; }
 
     public enum Platform {
         BLINKIT, ZEPTO, SWIGGY_INSTAMART

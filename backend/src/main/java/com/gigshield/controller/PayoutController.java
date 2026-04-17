@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/v1/payouts")
@@ -42,7 +44,6 @@ public class PayoutController {
         return ResponseEntity.ok(result);
     }
 
-  
     @PostMapping("/simulate/{workerId}")
     public ResponseEntity<?> simulatePayout(
             @PathVariable Long workerId,
@@ -99,12 +100,19 @@ public class PayoutController {
                 return ResponseEntity.notFound().build();
             }
 
-            List<Claim> paidClaims = claimRepository.findAll().stream()
+            List<Map<String, Object>> normalizedHistory = claimRepository.findAll().stream()
                     .filter(c -> c.getWorker() != null && id.equals(c.getWorker().getId()))
                     .filter(c -> c.getStatus() == Claim.ClaimStatus.PAID)
+                    .map(c -> {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("amount", c.getPayoutAmount());
+                        map.put("status", "SUCCESS"); // Map PAID to SUCCESS as per frontend req
+                        map.put("createdAt", c.getCreatedAt());
+                        return map;
+                    })
                     .toList();
 
-            return ResponseEntity.ok(paidClaims);
+            return ResponseEntity.ok(normalizedHistory);
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }

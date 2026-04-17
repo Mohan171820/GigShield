@@ -11,12 +11,16 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.Optional;
+import java.util.List;
 
 import com.gigshield.repository.ComplaintRepository;
 import com.gigshield.service.payment.PayoutService;
 import com.gigshield.dto.PayoutResultDTO;
 import com.gigshield.entity.Claim;
 import com.gigshield.entity.Complaint;
+import com.gigshield.entity.Worker;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,13 +46,26 @@ public class AdminController {
         try {
             double amount = Double.parseDouble(String.valueOf(body.get("amount")));
 
-            java.util.Optional<Complaint> optionalComplaint = complaintRepository.findById(id);
+            Optional<Complaint> optionalComplaint = complaintRepository.findById(id);
             if (optionalComplaint.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Complaint not found"));
             }
 
             Complaint complaint = optionalComplaint.get();
+            Worker worker = complaint.getWorker();
+
+            // --- Coverage Cap Check ---
+            double limit = worker.getCoverageAmount() != null ? worker.getCoverageAmount() : 3000.0;
+            BigDecimal totalAlreadyPaid = claimRepository.findAll().stream()
+                    .filter(c -> c.getWorker() != null && worker.getId().equals(c.getWorker().getId()))
+                    .filter(c -> c.getStatus() == Claim.ClaimStatus.PAID)
+                    .map(Claim::getPayoutAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
             
+            if (totalAlreadyPaid.doubleValue() + amount > limit) {
+                return ResponseEntity.status(400).body(Map.of("error", "Coverage limit exceeded"));
+            }
+
             // Validate status: Must be VERIFIED (ML_VERIFIED) or REVIEWED/ACCEPTED (APPROVED)
             if (complaint.getStatus() == Complaint.ComplaintStatus.RESOLVED) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Complaint is already resolved."));
@@ -67,7 +84,7 @@ public class AdminController {
             if (claim == null) {
                 claim = new Claim();
                 claim.setWorker(complaint.getWorker());
-                java.util.List<Policy> policies = policyRepository.findByWorkerIdAndStatus(complaint.getWorker().getId(), Policy.PolicyStatus.ACTIVE);
+                List<Policy> policies = policyRepository.findByWorkerIdAndStatus(complaint.getWorker().getId(), Policy.PolicyStatus.ACTIVE);
                 claim.setPolicy(policies.isEmpty() ? null : policies.get(0));
                 claim.setTriggerType(Claim.TriggerType.HEAVY_RAIN); 
                 claim.setTriggeredAt(java.time.LocalDateTime.now());
@@ -82,13 +99,21 @@ public class AdminController {
             if (payoutResult.getStatus() == PayoutResultDTO.PayoutStatus.SUCCESS) {
                 complaint.setStatus(Complaint.ComplaintStatus.RESOLVED);
                 complaint.setSuggestedPayoutAmount((int) amount);
+                
+                // Save audit fields to complaint
+                if (body.containsKey("coverageCapApplied")) {
+                    log.info("[ADMIN-APPROVAL] Audit: CapApplied={}, OriginalAmt={}, Remaining={}",
+                            body.get("coverageCapApplied"), body.get("originalRequestedAmount"), body.get("remainingCoverageAfter"));
+                }
+                
                 complaintRepository.save(complaint);
                 
                 return ResponseEntity.ok(Map.of(
                     "success", true,
                     "razorpayPayoutId", payoutResult.getRazorpayPayoutId() != null ? payoutResult.getRazorpayPayoutId() : "pout_mock_" + System.currentTimeMillis(),
                     "workerId", complaint.getWorker().getId(),
-                    "amount", amount
+                    "amount", amount,
+                    "remainingCoverage", limit - (totalAlreadyPaid.doubleValue() + amount)
                 ));
             } else {
                 return ResponseEntity.badRequest().body(Map.of("error", payoutResult.getStatusDescription()));
@@ -131,7 +156,7 @@ public class AdminController {
         double medRisk = 0.25; 
         double highRisk = 0.10; 
 
-        Map<String, Object> stats = new java.util.HashMap<>();
+        Map<String, Object> stats = new HashMap<>();
         
         stats.put("activePolicies", activePolicies);
         stats.put("active_policies", activePolicies);

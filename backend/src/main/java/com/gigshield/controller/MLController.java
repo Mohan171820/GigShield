@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import com.gigshield.repository.ZoneMetricsRepository;
 import com.gigshield.repository.WorkerRepository;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +51,7 @@ public class MLController {
             String recommendation = "APPROVE";
             double confidence = 0.91;
 
-            java.util.Map<String, Object> result = new java.util.HashMap<>();
+            Map<String, Object> result = new HashMap<>();
             result.put("city", city);
             result.put("zone", zone);
             result.put("category", category);
@@ -87,7 +88,7 @@ public class MLController {
             double workerActivityScore = 0.78;
             double fraudRiskScore = 0.10;
             int suggestedPayoutAmount = 350;
-            List<String> reasonCodes = java.util.List.of("WEATHER_CONFIRMED", "WORKER_WAS_ACTIVE");
+            List<String> reasonCodes = List.of("WEATHER_CONFIRMED", "WORKER_WAS_ACTIVE");
 
             return ResponseEntity.ok(Map.of(
                 "decision", "APPROVE",
@@ -120,22 +121,41 @@ public class MLController {
 
 
     @GetMapping("/predict/{workerId}")
-    public java.util.Map<String, Object> predictRiskForWorker(@PathVariable Long workerId) {
+    public Map<String, Object> predictRiskForWorker(@PathVariable Long workerId) {
         try {
             FeatureRequestDTO features = mlDataService.aggregateFeaturesForWorker(workerId);
             float predictedScore = inferenceService.predictRiskScore(features);
             
-            return java.util.Map.of(
-                "workerId", workerId,
-                "prediction", predictedScore,
-                "features", features
-            );
+            // Structured response for Dual-Axis Risk Matrix
+            Map<String, Double> behaviorFeatures = new HashMap<>();
+            behaviorFeatures.put("claim_frequency_30d", features.getObserved_count_30d() != null ? features.getObserved_count_30d().doubleValue() : 0.0);
+            behaviorFeatures.put("tenure_weeks", features.getTenure_weeks() != null ? features.getTenure_weeks().doubleValue() : 0.0);
+            behaviorFeatures.put("avg_daily_earnings_baseline", features.getAvg_earnings() != null ? features.getAvg_earnings().doubleValue() : 0.0);
+            behaviorFeatures.put("complaint_to_tenure_ratio", (features.getTenure_weeks() != null && features.getTenure_weeks() > 0) ? (double)features.getObserved_count_30d() / features.getTenure_weeks() : 0.0);
+
+            Map<String, Double> zoneFeatures = new HashMap<>();
+            zoneFeatures.put("zone_historical_fraud_rate", 0.12); // Mock or fetch from zone metrics
+            zoneFeatures.put("zone_avg_rainfall_mm", features.getRain_mm());
+            zoneFeatures.put("zone_cyclone_risk_index", 0.35);
+            zoneFeatures.put("zone_active_worker_count", (double) workerRepository.countByCityIgnoreCaseAndZoneIgnoreCase(features.getCity(), features.getZone()));
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("workerId", workerId);
+            result.put("fraudScore", predictedScore);
+            result.put("riskReasons", List.of("Recent High Frequency", "New Worker Proxy"));
+            result.put("features", features);
+            result.put("behaviorFeatures", behaviorFeatures);
+            result.put("zoneFeatures", zoneFeatures);
+            result.put("behaviorRiskScore", predictedScore); // Primary risk is behavior-based in this version
+            result.put("zoneRiskScore", 0.45); // Example zone risk
+            
+            return result;
         } catch (Exception e) {
-            return java.util.Map.of(
-                "workerId", workerId,
-                "error", "Risk score unavailable. Worker profile not fully synced.",
-                "prediction", 1.0f 
-            );
+            Map<String, Object> err = new HashMap<>();
+            err.put("workerId", workerId);
+            err.put("error", "Risk score unavailable: " + e.getMessage());
+            err.put("fraudScore", 1.0f);
+            return err;
         }
     }
 
